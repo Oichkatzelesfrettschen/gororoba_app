@@ -1,0 +1,77 @@
+[workspace]
+members = [
+    "apps/studio_web",
+    "apps/physics_sandbox",
+    "apps/synthesis_arena",
+    "crates/gororoba_shared_core",
+    "crates/gororoba_bevy_core",
+    "crates/gororoba_bevy_lbm",
+    "crates/gororoba_bevy_algebra",
+    "crates/gororoba_bevy_gr",
+    "crates/gororoba_bevy_quantum",
+    "games/fluid_dynamics",
+    "games/non_euclidean",
+    "games/relativistic_space",
+    "games/quantum_builder",
+    "tools/xtask",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0 OR MIT"
+
+[workspace.dependencies]
+anyhow = "1.0.101"
+askama = "0.15.4"
+axum = { version = "0.8.8", features = ["form"] }
+clap = { version = "4.5.58", features = ["derive"] }
+gororoba_shared_core = { path = "crates/gororoba_shared_core" }
+reqwest = { version = "0.13.2", default-features = false, features = ["json", "rustls"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+sha2 = "0.10.9"
+tokio = { version = "1.49.0", features = ["macros", "rt-multi-thread", "net"] }
+tower = "0.5.3"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt"] }
+urlencoding = "2.1.3"
+
+# Bevy engine
+bevy = "0.18"
+bevy_egui = "0.39"
+
+# open_gororoba physics crates (git deps for CI; [patch] overrides locally)
+lbm_vulkan = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+lbm_3d = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+lbm_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+cd_kernel = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+algebra_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+gr_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+cosmology_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+quantum_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+casimir_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+spin_tomography_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+
+# Shared numerics (match open_gororoba pin: statrs 0.18 requires nalgebra ^0.33)
+nalgebra = "0.33"
+
+# Local dev: override git deps with local paths when ../open_gororoba exists
+[patch."https://github.com/Oichkatzelesfrettschen/open_gororoba"]
+lbm_vulkan = { path = "../open_gororoba/crates/lbm_vulkan" }
+lbm_3d = { path = "../open_gororoba/crates/lbm_3d" }
+lbm_core = { path = "../open_gororoba/crates/lbm_core" }
+cd_kernel = { path = "../open_gororoba/crates/cd_kernel" }
+algebra_core = { path = "../open_gororoba/crates/algebra_core" }
+gr_core = { path = "../open_gororoba/crates/gr_core" }
+cosmology_core = { path = "../open_gororoba/crates/cosmology_core" }
+quantum_core = { path = "../open_gororoba/crates/quantum_core" }
+casimir_core = { path = "../open_gororoba/crates/casimir_core" }
+spin_tomography_core = { path = "../open_gororoba/crates/spin_tomography_core" }
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3

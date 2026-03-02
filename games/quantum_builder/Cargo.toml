@@ -1,0 +1,16 @@
+[package]
+name = "quantum_builder"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Quantum nanoscale sandbox with Casimir effect and tensor networks"
+
+[[bin]]
+name = "quantum_builder"
+path = "src/main.rs"
+
+[dependencies]
+bevy.workspace = true
+gororoba_bevy_core = { path = "../../crates/gororoba_bevy_core" }
+gororoba_bevy_quantum = { path = "../../crates/gororoba_bevy_quantum" }

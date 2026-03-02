@@ -1,0 +1,138 @@
+:root {
+  --bg: #0d1726;
+  --panel: rgba(16, 33, 54, 0.9);
+  --text: #e8f2ff;
+  --muted: #9fb8d6;
+  --accent: #3bcfb0;
+  --warn: #f3b45e;
+  --border: rgba(147, 177, 210, 0.22);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: "Iosevka Aile", "JetBrains Mono", sans-serif;
+  background: radial-gradient(circle at 15% 10%, #1a3a5a 0%, transparent 44%),
+    radial-gradient(circle at 90% 0%, #4b2a1e 0%, transparent 38%),
+    linear-gradient(150deg, #07101a 0%, var(--bg) 100%);
+}
+
+.layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  padding: 1rem;
+  max-width: 1220px;
+  margin: 0 auto;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 1rem;
+}
+
+h1,
+h2 {
+  margin-top: 0;
+}
+
+p,
+li {
+  color: var(--muted);
+}
+
+.mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.8rem;
+}
+
+.mode-btn {
+  border-radius: 0.55rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 650;
+  padding: 0.45rem 0.75rem;
+}
+
+.mode-btn.is-active {
+  background: linear-gradient(135deg, #19606a, var(--accent));
+  border-color: transparent;
+  color: #082015;
+}
+
+.stack {
+  display: grid;
+  gap: 0.75rem;
+}
+
+label {
+  display: grid;
+  gap: 0.25rem;
+}
+
+input,
+select,
+button {
+  border-radius: 0.55rem;
+  border: 1px solid var(--border);
+  padding: 0.48rem 0.6rem;
+  font: inherit;
+}
+
+input,
+select {
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(135deg, #1d5f66, var(--accent));
+  color: #072214;
+  font-weight: 700;
+}
+
+button:hover {
+  filter: brightness(1.06);
+}
+
+pre {
+  margin: 0;
+  min-height: 220px;
+  background: rgba(4, 10, 16, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.7rem;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+.chart-panel {
+  grid-column: 1 / -1;
+}
+
+canvas {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: rgba(3, 8, 14, 0.95);
+}
+
+.hidden {
+  display: none;
+}
+
+code {
+  color: #8de0ff;
+  font-size: 0.9em;
+}

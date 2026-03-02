@@ -1,0 +1,20 @@
+{
+  "emissivity_model": "novikov-thorne",
+  "isco_source": "cleanroom",
+  "mass_solar": 4000000.0,
+  "mdot": 0.1,
+  "prograde": true,
+  "r_in_cm": 3543900321772.379,
+  "r_in_over_rs": 3.0,
+  "r_out_cm": 14175601287089.516,
+  "r_out_over_rs": 12.0,
+  "redshift_model": "equatorial",
+  "size": 256,
+  "spin": 0.0,
+  "spin_curve_max": 0.99,
+  "spin_curve_min": -0.99,
+  "spin_curve_points": 64,
+  "spin_curve_source": "cleanroom",
+  "timestamp_utc": "2025-12-30T23:09:13Z",
+  "version": 1
+}

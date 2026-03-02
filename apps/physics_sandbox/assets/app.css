@@ -1,0 +1,143 @@
+:root {
+  --bg: #08131f;
+  --panel: rgba(10, 24, 38, 0.85);
+  --text: #ecf4ff;
+  --muted: #9bb3ca;
+  --accent: #28c4ba;
+  --amber: #e9a34a;
+  --border: rgba(147, 176, 202, 0.23);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: "Iosevka Aile", "JetBrains Mono", sans-serif;
+  background: radial-gradient(circle at 80% 0%, #1f2f4f 0%, transparent 44%),
+    radial-gradient(circle at 0% 100%, #47241a 0%, transparent 40%),
+    linear-gradient(145deg, #040b13 0%, var(--bg) 100%);
+}
+
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.4rem;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.mode-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.8rem 0 1rem;
+}
+
+.mode-btn {
+  padding: 0.45rem 0.8rem;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+
+.mode-btn.is-active {
+  background: linear-gradient(135deg, #145369, var(--accent));
+  border-color: transparent;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--panel);
+  padding: 1rem;
+}
+
+.learning-layer {
+  margin-bottom: 1rem;
+}
+
+.learning-layer h2 {
+  margin-top: 0;
+}
+
+.is-hidden {
+  display: none;
+}
+
+form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+label {
+  display: grid;
+  gap: 0.2rem;
+  color: var(--muted);
+}
+
+input,
+button {
+  border-radius: 0.45rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  padding: 0.45rem 0.55rem;
+}
+
+button {
+  background: linear-gradient(135deg, #19586a, var(--accent));
+  border-color: transparent;
+  cursor: pointer;
+  font-weight: 680;
+}
+
+button:hover {
+  filter: brightness(1.06);
+}
+
+button.mode-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+}
+
+button.mode-btn.is-active {
+  background: linear-gradient(135deg, #145369, var(--accent));
+  border-color: transparent;
+}
+
+pre {
+  margin: 0.7rem 0 0;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.25);
+  min-height: 7.4rem;
+  white-space: pre-wrap;
+}
+
+canvas {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: rgba(5, 12, 22, 0.92);
+}
+
+#phase-plot {
+  margin-top: 0.7rem;
+}
+
+#plot-note {
+  color: var(--amber);
+}

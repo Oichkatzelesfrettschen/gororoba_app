@@ -1,0 +1,17 @@
+[package]
+name = "gororoba_bevy_quantum"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Quantum mechanics and Casimir effect as a Bevy plugin"
+
+[features]
+physics = ["dep:quantum_core", "dep:casimir_core", "dep:spin_tomography_core"]
+
+[dependencies]
+bevy.workspace = true
+gororoba_bevy_core = { path = "../gororoba_bevy_core" }
+quantum_core = { workspace = true, optional = true }
+casimir_core = { workspace = true, optional = true }
+spin_tomography_core = { workspace = true, optional = true }

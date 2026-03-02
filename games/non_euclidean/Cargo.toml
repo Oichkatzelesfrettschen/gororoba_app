@@ -1,0 +1,16 @@
+[package]
+name = "non_euclidean"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Non-Euclidean puzzle game using Cayley-Dickson algebra"
+
+[[bin]]
+name = "non_euclidean"
+path = "src/main.rs"
+
+[dependencies]
+bevy.workspace = true
+gororoba_bevy_core = { path = "../../crates/gororoba_bevy_core" }
+gororoba_bevy_algebra = { path = "../../crates/gororoba_bevy_algebra" }

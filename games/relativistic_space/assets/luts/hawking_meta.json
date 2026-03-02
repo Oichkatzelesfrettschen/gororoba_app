@@ -1,0 +1,48 @@
+{
+  "description": "Hawking Radiation LUT Metadata",
+  "generation_date": "2026-01-02",
+  "phase": "10.1",
+  "temperature_lut": {
+    "filename": "hawking_temp_lut.csv",
+    "samples": 512,
+    "mass_min_g": "1.000000e+14",
+    "mass_max_g": "1.000000e+42",
+    "temperature_min_K": "1.226901e-16",
+    "temperature_max_K": "1.226901e+12",
+    "mass_units": "grams",
+    "temperature_units": "Kelvin",
+    "notes": "Log-spaced masses from primordial to supermassive BH"
+  },
+  "spectrum_lut": {
+    "filename": "hawking_spectrum_lut.csv",
+    "samples": 256,
+    "temperature_min_K": "1.0e3",
+    "temperature_max_K": "1.0e12",
+    "rgb_range": "[0,1] normalized",
+    "wavelengths_nm": {
+      "red": 700,
+      "green": 546,
+      "blue": 435
+    },
+    "notes": "Blackbody RGB colors from Planck distribution"
+  },
+  "physical_constants": {
+    "c_cm_s": "2.997925e+10",
+    "G_cgs": "6.674300e-08",
+    "hbar_erg_s": "1.054572e-27",
+    "k_B_erg_K": "1.380649e-16",
+    "M_sun_g": "1.988470e+33"
+  },
+  "example_values": {
+    "solar_mass_BH": {
+      "mass_g": "1.988470e+33",
+      "temperature_K": "6.170074e-08",
+      "note": "Extremely cold - invisible"
+    },
+    "primordial_BH": {
+      "mass_g": "5.0e14",
+      "temperature_K": "2.453801e+11",
+      "note": "Evaporating now - X-ray peak"
+    }
+  }
+}

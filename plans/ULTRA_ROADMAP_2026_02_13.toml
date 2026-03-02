@@ -1,0 +1,222 @@
+[meta]
+id = "GOROROBA-APP-ULTRA-ROADMAP-2026-02-13"
+status = "active"
+owner = "frontend"
+backend_source = "open_gororoba"
+quality_policy = "warnings_as_errors"
+
+[[task]]
+id = "R-001"
+title = "Inventory repository state"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-002"
+title = "Confirm cross-repo API contract references"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-003"
+title = "Rescope frontend around root Cargo workspace"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-004"
+title = "Create workspace member layout under apps/"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-005"
+title = "Research latest stable crate versions"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-006"
+title = "Validate docs/manual links for each crate"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-007"
+title = "Write dependency reference documentation"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-008"
+title = "Implement typed backend client"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-009"
+title = "Implement SSR template system"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-010"
+title = "Implement dashboard route and pipeline cards"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-011"
+title = "Implement per-pipeline run action"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-012"
+title = "Implement benchmark action"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-013"
+title = "Implement reproducibility action"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-014"
+title = "Implement suite action across all pipelines"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-015"
+title = "Implement static assets and responsive CSS"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-016"
+title = "Add route-level error rendering"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-017"
+title = "Add unit and integration tests (offline mock backend)"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-018"
+title = "Enforce fmt/clippy/test quality gates"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-019"
+title = "Document installation and reproducibility requirements"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-020"
+title = "Update root README and workspace map"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-021"
+title = "Publish frontend option portfolio"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-022"
+title = "Create frontend operator docs (agents/claude/gemini)"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-023"
+title = "Add browser E2E tests for primary UX flows"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-024"
+title = "Add caching layer for backend history endpoints"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-025"
+title = "Implement desktop packaging lane (Linux/BSD/Windows/macOS)"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-026"
+title = "Implement mobile app architecture spike (Android/iOS)"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-027"
+title = "Implement physics sandbox app prototype"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-028"
+title = "Implement layered pedagogy depth (Story/Explorer/Research) across studio and sandbox"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-029"
+title = "Add artifact links and research references into lesson system"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-030"
+title = "Implement Rust-native dependency freshness verifier and link validation discipline"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-031"
+title = "Implement game-like synthesis arena prototype"
+status = "done"
+owner = "frontend"
+
+[[task]]
+id = "R-032"
+title = "Add evidence export to publication-ready markdown"
+status = "next"
+owner = "frontend"
+
+[[task]]
+id = "R-033"
+title = "Harden CI gate scripts for fully reproducible release builds"
+status = "next"
+owner = "frontend"
+
+[[task]]
+id = "R-034"
+title = "Add installer-grade desktop bundles (deb/pkg/msi/pkg) with signatures"
+status = "next"
+owner = "frontend"
+
+[[task]]
+id = "R-035"
+title = "Implement mobile host shells using shared Rust core contracts"
+status = "next"
+owner = "frontend"
+
+[[task]]
+id = "R-036"
+title = "Publish open_gororoba backend alignment handoff contract and acceptance checklist"
+status = "done"
+owner = "frontend"

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>{{ title }}</h1>
+  <p>API contract: <code>{{ api_version }}</code></p>
+</section>
+<section class="card">
+  <p>{{ message }}</p>
+  <p class="muted">Backend target: <code>{{ backend_url }}</code></p>
+  <a class="btn" href="/">Back to Dashboard</a>
+</section>
+{% endblock %}

@@ -1,0 +1,19 @@
+{
+  "version": "mobile_spike.v1",
+  "learning_modes": [
+    "story",
+    "explorer",
+    "research"
+  ],
+  "studio_api_version": "studio.v1",
+  "pipelines": [
+    "thesis-1",
+    "thesis-2",
+    "thesis-3",
+    "thesis-4"
+  ],
+  "sandbox_endpoints": [
+    "/api/simulate",
+    "/api/benchmark"
+  ]
+}

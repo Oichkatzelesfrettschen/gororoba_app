@@ -1,0 +1,16 @@
+[package]
+name = "relativistic_space"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Relativistic space exploration game with gravitational lensing"
+
+[[bin]]
+name = "relativistic_space"
+path = "src/main.rs"
+
+[dependencies]
+bevy.workspace = true
+gororoba_bevy_core = { path = "../../crates/gororoba_bevy_core" }
+gororoba_bevy_gr = { path = "../../crates/gororoba_bevy_gr" }

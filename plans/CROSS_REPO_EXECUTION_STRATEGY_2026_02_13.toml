@@ -1,0 +1,41 @@
+[strategy]
+id = "GOROROBA-APP-CROSS-REPO-2026-02-13"
+updated = "2026-02-13"
+status = "active"
+scope = "Worktree/branch coordination for open_gororoba backend and gororoba_app frontend."
+
+[[track]]
+id = "STRAT-001"
+repo = "open_gororoba"
+branch_pattern = "feature/studio-contract-v1-*"
+ownership = "backend-api, registry-catalog adapter, contract tests"
+status = "active"
+rules = [
+  "Do not move frontend source into open_gororoba.",
+  "Treat warnings as errors.",
+  "Keep registry-backed pipeline metadata synchronized.",
+]
+
+[[track]]
+id = "STRAT-002"
+repo = "gororoba_app"
+branch_pattern = "feature/ssr-frontend-*"
+ownership = "Rust SSR UI, typed client, app-level tests"
+status = "planned"
+rules = [
+  "No Node/npm assumptions.",
+  "No external network in tests.",
+  "Use backend API contract as read-only source.",
+]
+
+[[coordination_rule]]
+id = "CR-001"
+description = "Backend contract changes must land before frontend typed-client updates."
+
+[[coordination_rule]]
+id = "CR-002"
+description = "Every API shape change requires matching contract test updates in open_gororoba."
+
+[[coordination_rule]]
+id = "CR-003"
+description = "Every frontend integration milestone must reference a specific backend api_version."

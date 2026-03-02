@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>Experiment Command Deck</h1>
+  <p>
+    API <code>{{ version.api_version }}</code> - package <code>{{ version.package_version }}</code> -
+    catalog <code>{{ version.catalog_source }}</code>.
+  </p>
+  <p class="muted">Registry: <code>{{ version.registry_path }}</code></p>
+  <p class="muted">Learning mode: <strong>{{ mode_label }}</strong></p>
+  <nav class="mode-switch" aria-label="Learning mode selector">
+    <a class="btn ghost {% if mode_story %}is-active{% endif %}" href="/?mode=story">Story</a>
+    <a class="btn ghost {% if mode_explorer %}is-active{% endif %}" href="/?mode=explorer">Explorer</a>
+    <a class="btn ghost {% if mode_research %}is-active{% endif %}" href="/?mode=research">Research</a>
+  </nav>
+  {% if version.catalog_warnings.len() > 0 %}
+  <div class="warning-box">
+    <h2>Catalog Warnings</h2>
+    <ul>
+      {% for warning in version.catalog_warnings %}
+      <li>{{ warning }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</section>
+
+{% if let Some(err) = action_error %}
+<div class="warning-box">
+  <h2>Action Error</h2>
+  <p>{{ err }}</p>
+</div>
+{% endif %}
+
+<section class="card">
+  <h2>All-Pipeline Suite</h2>
+  <form method="post" action="/run-suite?mode={{ mode_query_value }}" class="actions">
+    <input type="hidden" name="profile" value="quick" />
+    <button class="btn" type="submit">Run Quick Suite</button>
+  </form>
+  <form method="post" action="/run-suite?mode={{ mode_query_value }}" class="actions">
+    <input type="hidden" name="profile" value="full" />
+    <button class="btn accent" type="submit">Run Full Suite</button>
+  </form>
+  {% if let Some(suite) = suite %}
+  <div class="result">
+    <h3>Suite Summary</h3>
+    <p><strong>Profile:</strong> {{ suite.profile.as_str() }}</p>
+    <p><strong>Success Rate:</strong> {{ suite.success_rate }}</p>
+    <p><strong>Pass/Fail:</strong> {{ suite.pass_count }} / {{ suite.fail_count }}</p>
+    <p><strong>Total Duration:</strong> {{ suite.total_duration_ms }} ms</p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="card-grid">
+  {% for card in pipeline_cards %}
+  <article class="card">
+    <header>
+      <h2>{{ card.pipeline.id }}</h2>
+      <p>{{ card.pipeline.title }}</p>
+    </header>
+    <p class="metric">Primary metric: {{ card.pipeline.primary_metric }}</p>
+    <p>{{ card.pipeline.hypothesis }}</p>
+    <div class="lesson-slab">
+      {% if mode_story %}
+      <h3>Story Layer</h3>
+      <p>{{ card.lesson.story_summary }}</p>
+      <p><strong>Analogy:</strong> {{ card.lesson.analogy }}</p>
+      <p><strong>Try this:</strong> {{ card.lesson.story_activity }}</p>
+      <p><strong>Visual cue:</strong> {{ card.lesson.visual_guidance }}</p>
+      {% endif %}
+      {% if mode_explorer %}
+      <h3>Explorer Layer</h3>
+      <p>{{ card.lesson.summary }}</p>
+      <p><strong>Analogy:</strong> {{ card.lesson.analogy }}</p>
+      <p><strong>Equation guide:</strong> <code>{{ card.lesson.equation }}</code></p>
+      <p><strong>Artifact guidance:</strong> {{ card.lesson.artifact_guidance }}</p>
+      {% endif %}
+      {% if mode_research %}
+      <h3>Research Layer</h3>
+      <p><strong>Equation:</strong> <code>{{ card.lesson.equation }}</code></p>
+      <p><strong>Proof sketch:</strong> {{ card.lesson.proof_sketch }}</p>
+      <p><strong>Research prompt:</strong> Inspect assumptions, reproducibility, and artifact lineage before drawing conclusions.</p>
+      {% endif %}
+    </div>
+    <dl>
+      <dt>Quick profile</dt><dd>{{ card.pipeline.quick_profile }}</dd>
+      <dt>Full profile</dt><dd>{{ card.pipeline.full_profile }}</dd>
+      <dt>Registry binary</dt><dd>{{ card.pipeline.registry_binary }}</dd>
+    </dl>
+    <div class="actions">
+      <a class="btn ghost" href="/pipeline/{{ card.pipeline.id }}?mode={{ mode_query_value }}">Open Pipeline View</a>
+      <form method="post" action="/pipeline/{{ card.pipeline.id }}/run?mode={{ mode_query_value }}" class="inline-form">
+        <input type="hidden" name="profile" value="quick" />
+        <button class="btn" type="submit">Run Quick</button>
+      </form>
+      <form method="post" action="/pipeline/{{ card.pipeline.id }}/run?mode={{ mode_query_value }}" class="inline-form">
+        <input type="hidden" name="profile" value="full" />
+        <button class="btn accent" type="submit">Run Full</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="history">
+  <h2>Recent Run History ({{ history_preview.len() }} shown)</h2>
+  {% if history_preview.len() == 0 %}
+  <p class="muted">No runs recorded yet.</p>
+  {% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Run ID</th>
+        <th>Pipeline</th>
+        <th>Profile</th>
+        <th>Metric</th>
+        <th>Gate</th>
+        <th>Duration (ms)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for run in history_preview %}
+      <tr>
+        <td>{{ run.run_id }}</td>
+        <td>{{ run.experiment_id }}</td>
+        <td>{{ run.profile.as_str() }}</td>
+        <td>{{ run.metric_value }}</td>
+        <td>{% if run.passes_gate %}pass{% else %}fail{% endif %}</td>
+        <td>{{ run.duration_ms }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</section>
+
+<section class="card visual-lab">
+  <h2>Visual Lab</h2>
+  <p class="muted">
+    Quick visual overlay of recent run metrics and durations. This view is
+    intentionally lightweight and runs fully in-browser from table data.
+  </p>
+  <canvas id="history-chart" width="980" height="260"></canvas>
+</section>
+{% endblock %}

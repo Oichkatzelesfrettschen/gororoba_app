@@ -1,0 +1,16 @@
+[package]
+name = "fluid_dynamics"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "LBM fluid dynamics game: vehicle design and wind tunnel simulation"
+
+[[bin]]
+name = "fluid_dynamics"
+path = "src/main.rs"
+
+[dependencies]
+bevy.workspace = true
+gororoba_bevy_core = { path = "../../crates/gororoba_bevy_core" }
+gororoba_bevy_lbm = { path = "../../crates/gororoba_bevy_lbm" }

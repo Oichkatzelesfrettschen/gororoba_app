@@ -1,0 +1,19 @@
+{
+  "isco_source": "cleanroom",
+  "mass_solar": 4000000.0,
+  "photon_source": "cleanroom",
+  "points": 128,
+  "r_isco_cm": 3543900321772.379,
+  "r_max_over_rs": 20.0,
+  "r_min_over_rs": 3.0,
+  "r_ph_cm": 1771950160886.1895,
+  "r_s_cm": 1181300107257.4597,
+  "redshift_source": "cleanroom",
+  "source": "cleanroom",
+  "spin": 0.0,
+  "spin_curve_max": 0.99,
+  "spin_curve_min": -0.99,
+  "spin_curve_points": 64,
+  "timestamp_utc": "2025-12-30T23:09:05Z",
+  "version": 1
+}

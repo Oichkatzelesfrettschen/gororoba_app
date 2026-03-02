@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <link rel="stylesheet" href="/assets/app.css" />
+</head>
+<body>
+  <main>
+    <h1>Physics Sandbox</h1>
+    <p>
+      Deterministic oscillator lab for visual intuition and benchmarkable outputs.
+      Use this as a stepping stone toward deeper simulation engines.
+    </p>
+    <p>
+      Learning layer:
+      <strong id="mode-label">Explorer Mode</strong>
+      (toggle below for Story, Explorer, and Research depth).
+    </p>
+    <nav class="mode-switch" aria-label="Learning mode selector">
+      <button type="button" class="mode-btn is-active" data-mode="story">Story Mode</button>
+      <button type="button" class="mode-btn" data-mode="explorer">Explorer Mode</button>
+      <button type="button" class="mode-btn" data-mode="research">Research Mode</button>
+    </nav>
+
+    <section class="card learning-layer" data-layer="story">
+      <h2>Story Layer</h2>
+      <p>
+        Think of a spring toy that bounces and slowly settles down because air
+        and friction steal energy.
+      </p>
+      <p>
+        Mini activity: predict whether stronger damping will settle faster before
+        you run the simulation.
+      </p>
+    </section>
+
+    <section class="card learning-layer" data-layer="explorer">
+      <h2>Explorer Layer</h2>
+      <p>
+        This model computes acceleration as <code>a = -k*x - c*v</code>, then
+        steps velocity and position forward in time.
+      </p>
+      <ol>
+        <li>Run a baseline with default settings.</li>
+        <li>Increase damping and compare settling speed.</li>
+        <li>Increase spring stiffness and compare oscillation frequency.</li>
+      </ol>
+    </section>
+
+    <section class="card learning-layer" data-layer="research">
+      <h2>Research Layer</h2>
+      <p>
+        Governing ODE: <code>x'' + c*x' + k*x = 0</code> with explicit Euler
+        integration under fixed <code>dt</code>.
+      </p>
+      <h3>Assumptions</h3>
+      <ul>
+        <li>Unit mass with linear spring and linear viscous damping.</li>
+        <li>No external forcing term.</li>
+        <li>Numerical stability depends on selected <code>dt</code>, <code>k</code>, and <code>c</code>.</li>
+      </ul>
+      <h3>Artifact Paths</h3>
+      <ul>
+        <li><code>apps/physics_sandbox/src/main.rs</code> (simulation model and tests)</li>
+        <li><code>apps/physics_sandbox/assets/app.js</code> (plotting and UI logic)</li>
+        <li><code>open_gororoba/artifacts/</code> (paired benchmark artifact lane)</li>
+      </ul>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Simulation Controls</h2>
+        <form id="simulate-form">
+          <label>Steps <input type="number" name="steps" value="480" min="20" max="50000" /></label>
+          <label>dt <input type="number" name="dt" value="0.01" step="0.001" min="0.0001" max="0.1" /></label>
+          <label>Spring k <input type="number" name="spring_k" value="3.2" step="0.1" min="0.05" max="20" /></label>
+          <label>Damping <input type="number" name="damping" value="0.08" step="0.01" min="0" max="2" /></label>
+          <label>Seed <input type="number" name="seed" value="7" min="0" max="100000" /></label>
+          <button type="submit">Run Simulation</button>
+        </form>
+        <pre id="simulate-output"></pre>
+      </article>
+
+      <article class="card">
+        <h2>Benchmark Controls</h2>
+        <form id="benchmark-form">
+          <label>Iterations <input type="number" name="iterations" value="12" min="1" max="300" /></label>
+          <label>Steps <input type="number" name="steps" value="480" min="20" max="50000" /></label>
+          <label>dt <input type="number" name="dt" value="0.01" step="0.001" min="0.0001" max="0.1" /></label>
+          <label>Spring k <input type="number" name="spring_k" value="3.2" step="0.1" min="0.05" max="20" /></label>
+          <label>Damping <input type="number" name="damping" value="0.08" step="0.01" min="0" max="2" /></label>
+          <label>Seed <input type="number" name="seed" value="7" min="0" max="100000" /></label>
+          <button type="submit">Run Benchmark</button>
+        </form>
+        <pre id="benchmark-output"></pre>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Visual Lab</h2>
+      <canvas id="plot" width="980" height="320"></canvas>
+      <canvas id="phase-plot" width="980" height="300"></canvas>
+      <p id="plot-note">Run a simulation to draw displacement and energy trends.</p>
+    </section>
+  </main>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ app_name }}</title>
+    <link rel="stylesheet" href="/assets/app.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel">
+        <h1>{{ app_name }}</h1>
+        <p>
+          Configure parameters and run deterministic evaluations against stage gates.
+        </p>
+        <p>
+          Learning layer:
+          <strong id="mode-label">Explorer Mode</strong>
+        </p>
+        <nav class="mode-switch" aria-label="Learning mode selector">
+          <button type="button" class="mode-btn" data-mode="story">Story</button>
+          <button type="button" class="mode-btn is-active" data-mode="explorer">Explorer</button>
+          <button type="button" class="mode-btn" data-mode="research">Research</button>
+        </nav>
+      </section>
+
+      <section class="panel learning-panel" data-layer="story">
+        <h2>Story Layer</h2>
+        <p>
+          You are tuning a science arena team. Each slider strengthens a different
+          skill, and each challenge has minimum levels to pass all gates.
+        </p>
+      </section>
+
+      <section class="panel learning-panel" data-layer="explorer">
+        <h2>Explorer Layer</h2>
+        <p>
+          The arena computes four metrics: ingest, synthesis, stability, and
+          delivery. Composite score is the weighted average from challenge weights.
+        </p>
+      </section>
+
+      <section class="panel learning-panel hidden" data-layer="research">
+        <h2>Research Layer</h2>
+        <p><code>score = sum_i(weight_i * metric_i) / sum_i(weight_i)</code></p>
+        <p>
+          Metrics are deterministic bounded functions of
+          <code>throughput, precision, efficiency, resilience, seed</code>.
+        </p>
+        <p>
+          Use benchmark mode to estimate runtime jitter and verify deterministic
+          output stability for fixed requests.
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2>Evaluate</h2>
+        <form id="evaluate-form" class="stack">
+          <label>
+            Challenge
+            <select id="challenge" name="challenge_id"></select>
+          </label>
+          <label>
+            Throughput
+            <input id="throughput" name="throughput" type="number" min="0" max="100" value="70" />
+          </label>
+          <label>
+            Precision
+            <input id="precision" name="precision" type="number" min="0" max="100" value="70" />
+          </label>
+          <label>
+            Efficiency
+            <input id="efficiency" name="efficiency" type="number" min="0" max="100" value="70" />
+          </label>
+          <label>
+            Resilience
+            <input id="resilience" name="resilience" type="number" min="0" max="100" value="70" />
+          </label>
+          <label>
+            Seed
+            <input id="seed" name="seed" type="number" min="0" value="42" />
+          </label>
+          <button type="submit">Run Evaluation</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Benchmark</h2>
+        <form id="benchmark-form" class="stack">
+          <label>
+            Iterations
+            <input id="iterations" name="iterations" type="number" min="1" max="50000" value="100" />
+          </label>
+          <button type="submit">Run Benchmark</button>
+        </form>
+      </section>
+
+      <section class="panel">
+        <h2>Output</h2>
+        <pre id="output">Loading challenges...</pre>
+      </section>
+
+      <section class="panel chart-panel">
+        <h2>Arena Scoreboard</h2>
+        <canvas id="arena-chart" width="980" height="280"></canvas>
+      </section>
+    </main>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>

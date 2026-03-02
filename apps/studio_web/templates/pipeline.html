@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>{{ pipeline.id }} - {{ pipeline.title }}</h1>
+  <p>{{ pipeline.hypothesis }}</p>
+  <p class="muted">API <code>{{ version.api_version }}</code> - source id <code>{{ pipeline.experiment_id }}</code> - lineage <code>{{ pipeline.lineage_id }}</code></p>
+  <p class="muted">Learning mode: <strong>{{ mode_label }}</strong></p>
+  <nav class="mode-switch" aria-label="Learning mode selector">
+    <a class="btn ghost {% if mode_story %}is-active{% endif %}" href="/pipeline/{{ pipeline.id }}?mode=story">Story</a>
+    <a class="btn ghost {% if mode_explorer %}is-active{% endif %}" href="/pipeline/{{ pipeline.id }}?mode=explorer">Explorer</a>
+    <a class="btn ghost {% if mode_research %}is-active{% endif %}" href="/pipeline/{{ pipeline.id }}?mode=research">Research</a>
+  </nav>
+</section>
+
+{% if let Some(err) = action_error %}
+<div class="warning-box">
+  <h2>Action Error</h2>
+  <p>{{ err }}</p>
+</div>
+{% endif %}
+
+<section class="card lesson-card">
+  {% if mode_story %}
+  <h2>Story Layer</h2>
+  <p>{{ lesson.story_summary }}</p>
+  <p><strong>Analogy:</strong> {{ lesson.analogy }}</p>
+  <p><strong>Hands-on mini activity:</strong> {{ lesson.story_activity }}</p>
+  <p><strong>What to look for:</strong> {{ lesson.visual_guidance }}</p>
+  <p><strong>What to save:</strong> {{ lesson.artifact_guidance }}</p>
+  {% endif %}
+  {% if mode_explorer %}
+  <h2>Explorer Layer</h2>
+  <p>{{ lesson.summary }}</p>
+  <p><strong>Equation hint:</strong> <code>{{ lesson.equation }}</code></p>
+  <h3>Equation walkthrough</h3>
+  <ol>
+    {% for step in lesson.equation_walkthrough %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
+  <h3>Derivation path</h3>
+  <ol>
+    {% for step in lesson.derivation_steps %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
+  <p><strong>Visual guidance:</strong> {{ lesson.visual_guidance }}</p>
+  <p><strong>Artifact guidance:</strong> {{ lesson.artifact_guidance }}</p>
+  {% endif %}
+  {% if mode_research %}
+  <h2>Research Layer</h2>
+  <p>{{ lesson.summary }}</p>
+  <h3>Equation</h3>
+  <p><code>{{ lesson.equation }}</code></p>
+  <h3>Equation Walkthrough</h3>
+  <ol>
+    {% for step in lesson.equation_walkthrough %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
+  <h3>Derivation Steps</h3>
+  <ol>
+    {% for step in lesson.derivation_steps %}
+    <li>{{ step }}</li>
+    {% endfor %}
+  </ol>
+  <h3>Assumptions</h3>
+  <ul>
+    {% for assumption in lesson.assumptions %}
+    <li>{{ assumption }}</li>
+    {% endfor %}
+  </ul>
+  <h3>Proof Sketch</h3>
+  <p>{{ lesson.proof_sketch }}</p>
+  <h3>Research Questions</h3>
+  <ul>
+    {% for question in lesson.research_questions %}
+    <li>{{ question }}</li>
+    {% endfor %}
+  </ul>
+  <h3>Artifact Links</h3>
+  <ul>
+    {% for link in lesson.artifact_links %}
+    <li><code>{{ link.uri }}</code> - {{ link.label }}</li>
+    {% endfor %}
+  </ul>
+  <h3>Reference Links</h3>
+  <ul>
+    {% for link in lesson.reference_links %}
+    <li><a href="{{ link.uri }}" target="_blank" rel="noreferrer">{{ link.label }}</a></li>
+    {% endfor %}
+  </ul>
+  <p><strong>Visual guidance:</strong> {{ lesson.visual_guidance }}</p>
+  <p><strong>Artifact guidance:</strong> {{ lesson.artifact_guidance }}</p>
+  {% endif %}
+</section>
+
+<section class="card-grid two">
+  <article class="card">
+    <h2>Run</h2>
+    <form method="post" action="/pipeline/{{ pipeline.id }}/run?mode={{ mode_query_value }}" class="stack-form">
+      <label>Profile
+        <select name="profile">
+          <option value="quick">quick</option>
+          <option value="full">full</option>
+        </select>
+      </label>
+      <button class="btn accent" type="submit">Execute Run</button>
+    </form>
+    {% if let Some(run) = run %}
+    <div class="result">
+      <h3>Latest Run Result</h3>
+      <p><strong>Metric:</strong> {{ run.metric_value }} (threshold {{ run.threshold }})</p>
+      <p><strong>Gate:</strong> {% if run.passes_gate %}pass{% else %}fail{% endif %}</p>
+      <p><strong>Duration:</strong> {{ run.duration_ms }} ms</p>
+    </div>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <h2>Benchmark</h2>
+    <form method="post" action="/pipeline/{{ pipeline.id }}/benchmark?mode={{ mode_query_value }}" class="stack-form">
+      <label>Profile
+        <select name="profile">
+          <option value="quick">quick</option>
+          <option value="full">full</option>
+        </select>
+      </label>
+      <label>Iterations
+        <input type="number" name="iterations" min="1" max="200" value="8" />
+      </label>
+      <button class="btn" type="submit">Run Benchmark</button>
+    </form>
+    {% if let Some(b) = benchmark %}
+    <div class="result">
+      <h3>Benchmark Summary</h3>
+      <p><strong>Completed:</strong> {{ b.iterations_completed }} / {{ b.iterations_requested }}</p>
+      <p><strong>Mean Duration:</strong> {{ b.mean_duration_ms }} ms</p>
+      <p><strong>Mean Metric:</strong> {{ b.mean_metric_value }}</p>
+      <p><strong>Stddev:</strong> {{ b.metric_stddev }}</p>
+    </div>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <h2>Reproducibility</h2>
+    <form method="post" action="/pipeline/{{ pipeline.id }}/reproducibility?mode={{ mode_query_value }}" class="stack-form">
+      <label>Profile
+        <select name="profile">
+          <option value="quick">quick</option>
+          <option value="full">full</option>
+        </select>
+      </label>
+      <label>Iterations
+        <input type="number" name="iterations" min="2" max="200" value="10" />
+      </label>
+      <label>Tolerance
+        <input type="number" name="tolerance" step="0.0001" min="0" value="0.001" />
+      </label>
+      <button class="btn" type="submit">Check Stability</button>
+    </form>
+    {% if let Some(r) = reproducibility %}
+    <div class="result">
+      <h3>Reproducibility Summary</h3>
+      <p><strong>Stable:</strong> {% if r.stable %}yes{% else %}no{% endif %}</p>
+      <p><strong>Gate Consistent:</strong> {% if r.gate_consistent %}yes{% else %}no{% endif %}</p>
+      <p><strong>Max Metric Delta:</strong> {{ r.max_metric_delta }}</p>
+      <p><strong>Tolerance:</strong> {{ r.tolerance }}</p>
+    </div>
+    {% endif %}
+  </article>
+
+  <article class="card">
+    <h2>Recent Runs</h2>
+    {% if history_preview.len() == 0 %}
+    <p class="muted">No history available.</p>
+    {% else %}
+    <ul class="history-list">
+      {% for run in history_preview %}
+      {% if run.experiment_id == pipeline.id %}
+      <li>
+        <span>#{{ run.run_id }}</span>
+        <span>{{ run.profile.as_str() }}</span>
+        <span>{{ run.metric_value }}</span>
+        <span>{% if run.passes_gate %}pass{% else %}fail{% endif %}</span>
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+</section>
+
+<section class="card visual-lab">
+  <h2>Visual Lab</h2>
+  <p class="muted">
+    Interactive oscillator lab for intuition and analysis. Story mode treats this
+    as a physical analogy, Explorer mode uses trajectory traces, and Research
+    mode uses the phase portrait as a stability proxy.
+  </p>
+  <canvas id="toy-oscillator" width="980" height="230"></canvas>
+  <canvas id="phase-portrait" width="980" height="260"></canvas>
+</section>
+{% endblock %}
