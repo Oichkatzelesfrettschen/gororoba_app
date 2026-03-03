@@ -6142,6 +6142,7 @@ name = "quantum_builder"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_egui",
  "gororoba_bevy_core",
  "gororoba_bevy_quantum",
 ]
@@ -6548,6 +6549,7 @@ name = "relativistic_space"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_egui",
  "gororoba_bevy_core",
  "gororoba_bevy_gr",
 ]
