@@ -1,7 +1,10 @@
 // LBM physics as a Bevy plugin.
 //
-// Wraps open_gororoba's lbm_vulkan compute engine and exposes it as
-// Bevy resources, components, and systems.
+// Wraps open_gororoba's lbm_3d CPU solver (and future lbm_vulkan GPU solver)
+// as Bevy resources, components, and systems.
+//
+// Physics steps run in FixedUpdate (deterministic, framerate-independent).
+// Diagnostics and rendering readback run in Update.
 
 use bevy::prelude::*;
 
@@ -10,11 +13,36 @@ pub mod compute_bridge;
 pub mod resources;
 pub mod systems;
 
+pub use components::{
+    BoundaryConditions, BoundaryType, FluidDomain, SimulationDiagnostics, SimulationParams,
+    VoxelGrid,
+};
+pub use compute_bridge::{GpuBridgeConfig, GpuFrameTarget};
+pub use resources::{LbmCpuEngine, SolverConfig, SolverInstance};
+
 pub struct LbmPlugin;
 
 impl Plugin for LbmPlugin {
-    fn build(&self, _app: &mut App) {
-        // Phase 2: register LBM resources, events, and systems.
-        // Physics steps run in FixedUpdate; readback and rendering in Update.
+    fn build(&self, app: &mut App) {
+        app.init_resource::<LbmCpuEngine>()
+            .init_resource::<GpuBridgeConfig>()
+            .init_resource::<GpuFrameTarget>()
+            .add_systems(
+                FixedUpdate,
+                (
+                    systems::solver_init_system,
+                    systems::simulation_step_system,
+                    systems::boundary_update_system,
+                )
+                    .chain(),
+            )
+            .add_systems(
+                Update,
+                (
+                    systems::diagnostics_system,
+                    compute_bridge::gpu_readback_system,
+                ),
+            )
+            .add_systems(PostUpdate, systems::solver_cleanup_system);
     }
 }
