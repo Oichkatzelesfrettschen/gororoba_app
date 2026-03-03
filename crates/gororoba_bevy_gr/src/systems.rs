@@ -173,6 +173,6 @@ mod tests {
 
         let inst = engine.get_mut(entity).unwrap();
         inst.compute_shadow(64, std::f64::consts::FRAC_PI_2);
-        assert!(inst.shadow_alpha.len() > 0);
+        assert!(!inst.shadow_alpha.is_empty());
     }
 }

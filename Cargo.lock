@@ -3230,6 +3230,7 @@ name = "fluid_dynamics"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_egui",
  "gororoba_bevy_core",
  "gororoba_bevy_lbm",
 ]
