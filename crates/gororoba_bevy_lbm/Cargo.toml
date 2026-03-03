@@ -6,15 +6,9 @@ license = "GPL-2.0-only"
 publish = false
 description = "LBM physics wrapped as a Bevy plugin"
 
-[features]
-# Enable physics backend. Disabled by default to avoid naga 27/28 conflict
-# between Bevy (naga 27) and lbm_vulkan (naga 28). Enable in Phase 2 after
-# resolving the naga version in open_gororoba.
-physics = ["dep:lbm_vulkan", "dep:lbm_3d", "dep:lbm_core"]
-
 [dependencies]
 bevy.workspace = true
 gororoba_bevy_core = { path = "../gororoba_bevy_core" }
-lbm_vulkan = { workspace = true, optional = true }
-lbm_3d = { workspace = true, optional = true }
-lbm_core = { workspace = true, optional = true }
+lbm_vulkan.workspace = true
+lbm_3d.workspace = true
+lbm_core.workspace = true

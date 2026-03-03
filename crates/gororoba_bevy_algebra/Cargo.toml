@@ -6,11 +6,8 @@ license = "GPL-2.0-only"
 publish = false
 description = "Cayley-Dickson algebra as a Bevy plugin"
 
-[features]
-physics = ["dep:cd_kernel", "dep:algebra_core"]
-
 [dependencies]
 bevy.workspace = true
 gororoba_bevy_core = { path = "../gororoba_bevy_core" }
-cd_kernel = { workspace = true, optional = true }
-algebra_core = { workspace = true, optional = true }
+cd_kernel.workspace = true
+algebra_core.workspace = true

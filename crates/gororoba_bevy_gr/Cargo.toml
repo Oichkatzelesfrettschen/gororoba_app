@@ -6,11 +6,8 @@ license = "MIT"
 publish = false
 description = "General relativity as a Bevy plugin"
 
-[features]
-physics = ["dep:gr_core", "dep:cosmology_core"]
-
 [dependencies]
 bevy.workspace = true
 gororoba_bevy_core = { path = "../gororoba_bevy_core" }
-gr_core = { workspace = true, optional = true }
-cosmology_core = { workspace = true, optional = true }
+gr_core.workspace = true
+cosmology_core.workspace = true
