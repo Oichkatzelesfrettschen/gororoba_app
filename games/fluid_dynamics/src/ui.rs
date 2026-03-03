@@ -114,7 +114,7 @@ fn design_ui_system(
     mut contexts: EguiContexts,
     mut config: ResMut<WindTunnelConfig>,
     mut commands: Commands,
-    vehicle_query: Query<(Entity, &VoxelGrid), With<Vehicle>>,
+    vehicle_query: Query<(Entity, &Vehicle, &VoxelGrid)>,
 ) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
@@ -154,7 +154,10 @@ fn design_ui_system(
 
             ui.separator();
 
-            if let Some((_, grid)) = vehicle_query.iter().next() {
+            if let Some((_, vehicle, grid)) = vehicle_query.iter().next() {
+                if let Some(preset) = vehicle.preset {
+                    ui.label(format!("Active preset: {preset:?}"));
+                }
                 ui.label(format!("Solid cells: {}", grid.solid_count()));
                 ui.label(format!("Domain: {}x{}x{}", grid.nx, grid.ny, grid.nz));
             }
@@ -190,11 +193,11 @@ fn design_ui_system(
 
 fn replace_vehicle(
     commands: &mut Commands,
-    vehicle_query: &Query<(Entity, &VoxelGrid), With<Vehicle>>,
+    vehicle_query: &Query<(Entity, &Vehicle, &VoxelGrid)>,
     config: &WindTunnelConfig,
 ) {
     // Despawn existing vehicle.
-    for (entity, _) in vehicle_query.iter() {
+    for (entity, _, _) in vehicle_query.iter() {
         commands.entity(entity).despawn();
     }
     // Spawn new vehicle with selected preset.

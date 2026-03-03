@@ -5220,6 +5220,7 @@ name = "non_euclidean"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "bevy_egui",
  "gororoba_bevy_algebra",
  "gororoba_bevy_core",
 ]

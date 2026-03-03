@@ -20,8 +20,6 @@ pub enum VehiclePreset {
 /// Marker component for the active vehicle entity.
 #[derive(Component)]
 pub struct Vehicle {
-    /// Which preset generated this vehicle (used for UI display).
-    #[allow(dead_code)]
     pub preset: Option<VehiclePreset>,
 }
 
