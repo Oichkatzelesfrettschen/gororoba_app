@@ -5,7 +5,10 @@
 
 use bevy::prelude::*;
 
-use casimir_core::energy::{CasimirEnergyResult, WorldlineCasimirConfig, casimir_energy_at_point};
+use casimir_core::energy::{
+    CasimirEnergyField3D, CasimirEnergyResult, WorldlineCasimirConfig, casimir_energy_at_point,
+    casimir_energy_field_3d,
+};
 use casimir_core::geometry::ParallelPlates;
 use quantum_core::mera::{MeraLayer, build_mera_structure, mera_entropy_estimate};
 
@@ -33,6 +36,8 @@ pub struct QuantumInstance {
     pub entropy: f64,
     /// Cached Casimir result.
     pub casimir_result: Option<CasimirEnergyResult>,
+    /// Cached 3D Casimir energy density field.
+    pub casimir_field_3d: Option<CasimirEnergyField3D>,
 }
 
 /// Configuration for creating a quantum instance.
@@ -57,6 +62,7 @@ impl QuantumEngine {
                 local_dim: config.local_dim,
                 entropy: 0.0,
                 casimir_result: None,
+                casimir_field_3d: None,
             },
         ));
     }
@@ -121,6 +127,23 @@ impl QuantumInstance {
         }
     }
 
+    /// Compute 3D Casimir energy density field for parallel plates.
+    ///
+    /// Uses the worldline Monte Carlo method on a 3D grid. The result
+    /// is cached in `casimir_field_3d` for volume rendering.
+    pub fn compute_casimir_field_3d_parallel_plates(
+        &mut self,
+        separation: f64,
+        bounds: (f64, f64, f64, f64, f64, f64),
+        resolution: (usize, usize, usize),
+        config: &WorldlineCasimirConfig,
+    ) {
+        let geometry = ParallelPlates { separation };
+        self.casimir_field_3d = Some(casimir_energy_field_3d(
+            &geometry, bounds, resolution, config,
+        ));
+    }
+
     /// Number of MERA layers.
     pub fn layer_count(&self) -> usize {
         self.mera_layers.len()
@@ -182,6 +205,34 @@ mod tests {
         engine.create_instance(entity, &test_config());
         engine.remove(entity);
         assert!(engine.get(entity).is_none());
+    }
+
+    #[test]
+    fn casimir_field_3d_computed() {
+        let mut engine = QuantumEngine::default();
+        let entity = Entity::from_bits(1);
+        engine.create_instance(entity, &test_config());
+
+        let inst = engine.get_mut(entity).unwrap();
+        let config = WorldlineCasimirConfig {
+            n_loop_points: 32,
+            n_loops: 100,
+            t_min: 0.01,
+            t_max: 5.0,
+            n_t_points: 8,
+            seed: 42,
+        };
+        inst.compute_casimir_field_3d_parallel_plates(
+            1.0,
+            (-1.0, 1.0, 0.0, 1.0, -1.0, 1.0),
+            (3, 3, 3),
+            &config,
+        );
+
+        let field = inst.casimir_field_3d.as_ref().unwrap();
+        assert_eq!(field.resolution, (3, 3, 3));
+        assert_eq!(field.data.len(), 27);
+        assert!(field.data.iter().all(|v| v.is_finite()));
     }
 
     #[test]

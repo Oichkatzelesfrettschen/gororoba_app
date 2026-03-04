@@ -5,7 +5,9 @@
 //
 // Flow: Menu -> VehicleDesign -> WindTunnel -> Results -> Menu.
 
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
+use bevy_egui::EguiGlobalSettings;
 use gororoba_bevy_core::{GororobaCorePlugin, HudState, OrbitCamera};
 use gororoba_bevy_lbm::LbmPlugin;
 
@@ -17,13 +19,27 @@ mod vehicle;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Gororoba: Fluid Dynamics".into(),
-                ..default()
-            }),
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Gororoba: Fluid Dynamics".into(),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(LogPlugin {
+                    // Suppress non-actionable third-party warnings:
+                    // - wgpu_hal: VK_EXT_physical_device_drm missing (driver limitation)
+                    // - bevy_render::view::window: first-frame swap chain reconfigure
+                    filter: "info,wgpu_hal=error,bevy_render::view::window=error".into(),
+                    ..default()
+                }),
+        )
+        .insert_resource(EguiGlobalSettings {
+            enable_absorb_bevy_input_system: true,
             ..default()
-        }))
+        })
         .add_plugins(GororobaCorePlugin)
         .add_plugins(LbmPlugin)
         .add_plugins(states::FluidStatesPlugin)

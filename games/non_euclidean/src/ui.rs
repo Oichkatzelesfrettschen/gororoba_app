@@ -2,10 +2,10 @@
 // results screen, and pedagogy content.
 
 use bevy::prelude::*;
-use bevy_egui::EguiContexts;
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass};
 
 use gororoba_bevy_algebra::{AlgebraDiagnostics, AlgebraDomain};
-use gororoba_bevy_core::{PedagogyMode, PedagogyState};
+use gororoba_bevy_core::{EguiReady, PedagogyMode, PedagogyState};
 
 use crate::portals::PortalTraversalCount;
 use crate::puzzles::{PuzzleState, introductory_puzzles};
@@ -17,22 +17,31 @@ pub struct PuzzleUiPlugin;
 
 impl Plugin for PuzzleUiPlugin {
     fn build(&self, app: &mut App) {
+        let egui_ready = resource_exists::<EguiReady>;
         app.add_systems(Startup, setup_pedagogy)
             .add_systems(
-                Update,
-                menu_ui_system.run_if(in_state(PuzzleGamePhase::Menu)),
+                EguiPrimaryContextPass,
+                menu_ui_system
+                    .run_if(in_state(PuzzleGamePhase::Menu))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                explore_ui_system.run_if(in_state(PuzzleSimState::Exploring)),
+                EguiPrimaryContextPass,
+                explore_ui_system
+                    .run_if(in_state(PuzzleSimState::Exploring))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                puzzle_ui_system.run_if(in_state(PuzzleSimState::PuzzleSolving)),
+                EguiPrimaryContextPass,
+                puzzle_ui_system
+                    .run_if(in_state(PuzzleSimState::PuzzleSolving))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                results_ui_system.run_if(in_state(PuzzleSimState::Results)),
+                EguiPrimaryContextPass,
+                results_ui_system
+                    .run_if(in_state(PuzzleSimState::Results))
+                    .run_if(egui_ready),
             );
     }
 }
@@ -84,6 +93,9 @@ fn menu_ui_system(mut contexts: EguiContexts) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {
@@ -119,6 +131,9 @@ fn explore_ui_system(
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("Explorer")
         .anchor(
@@ -214,6 +229,9 @@ fn results_ui_system(mut contexts: EguiContexts, puzzle_state: Res<PuzzleState>)
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {

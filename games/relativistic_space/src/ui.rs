@@ -2,11 +2,12 @@
 // results screen, and pedagogy content.
 
 use bevy::prelude::*;
-use bevy_egui::EguiContexts;
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass};
 
-use gororoba_bevy_core::{PedagogyMode, PedagogyState};
+use gororoba_bevy_core::{EguiReady, PedagogyMode, PedagogyState};
 use gororoba_bevy_gr::{GrDiagnostics, GrEngine, SpacetimeDomain};
 
+use crate::blackhole_material::{ActiveBlackHoleMaterial, BlackHoleMaterial};
 use crate::celestial::{CelestialConfig, MissionResults};
 use crate::spacecraft::TimeDilationDisplay;
 use crate::states::{SpaceGamePhase, SpaceSimState};
@@ -16,22 +17,31 @@ pub struct SpaceUiPlugin;
 
 impl Plugin for SpaceUiPlugin {
     fn build(&self, app: &mut App) {
+        let egui_ready = resource_exists::<EguiReady>;
         app.add_systems(Startup, setup_pedagogy)
             .add_systems(
-                Update,
-                menu_ui_system.run_if(in_state(SpaceGamePhase::Menu)),
+                EguiPrimaryContextPass,
+                menu_ui_system
+                    .run_if(in_state(SpaceGamePhase::Menu))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                observe_ui_system.run_if(in_state(SpaceSimState::Observing)),
+                EguiPrimaryContextPass,
+                (observe_ui_system, shader_tuning_panel)
+                    .run_if(in_state(SpaceSimState::Observing))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                navigate_ui_system.run_if(in_state(SpaceSimState::Navigating)),
+                EguiPrimaryContextPass,
+                navigate_ui_system
+                    .run_if(in_state(SpaceSimState::Navigating))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                results_ui_system.run_if(in_state(SpaceSimState::Results)),
+                EguiPrimaryContextPass,
+                results_ui_system
+                    .run_if(in_state(SpaceSimState::Results))
+                    .run_if(egui_ready),
             );
     }
 }
@@ -79,6 +89,9 @@ fn menu_ui_system(mut contexts: EguiContexts) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {
@@ -112,6 +125,9 @@ fn observe_ui_system(
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("Black Hole Observer")
         .anchor(
@@ -156,6 +172,9 @@ fn navigate_ui_system(mut contexts: EguiContexts, dilation: Res<TimeDilationDisp
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("Navigation")
         .anchor(
@@ -191,6 +210,9 @@ fn results_ui_system(mut contexts: EguiContexts, results: Res<MissionResults>) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {
@@ -223,6 +245,193 @@ fn results_ui_system(mut contexts: EguiContexts, results: Res<MissionResults>) {
             ui.label("Press ENTER to return to menu");
         });
     });
+}
+
+/// Shader parameter tuning panel with sliders for all black hole uniforms.
+fn shader_tuning_panel(
+    mut contexts: EguiContexts,
+    active: Option<Res<ActiveBlackHoleMaterial>>,
+    mut materials: ResMut<Assets<BlackHoleMaterial>>,
+) {
+    let Some(active) = active else { return };
+    let Ok(ctx) = contexts.ctx_mut() else { return };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
+    let Some(mat) = materials.get_mut(&active.handle) else {
+        return;
+    };
+
+    let u = &mut mat.uniforms;
+    bevy_egui::egui::Window::new("Shader Parameters")
+        .anchor(
+            bevy_egui::egui::Align2::RIGHT_TOP,
+            bevy_egui::egui::vec2(-10.0, 10.0),
+        )
+        .default_width(300.0)
+        .vscroll(true)
+        .show(ctx, |ui| {
+            // -- Black Hole --
+            bevy_egui::egui::CollapsingHeader::new("Black Hole")
+                .default_open(true)
+                .show(ui, |ui| {
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.schwarzschild_radius, 0.1..=20.0)
+                            .text("r_s"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.black_hole_mass, 0.01..=100.0)
+                            .text("Mass"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.kerr_spin, -0.998..=0.998)
+                            .text("Spin a"),
+                    );
+                    slider_toggle(ui, &mut u.render_black_hole, "Render BH");
+                    slider_toggle(ui, &mut u.gravitational_lensing, "Lensing");
+                    slider_toggle(ui, &mut u.enable_photon_sphere, "Photon Sphere");
+                });
+
+            // -- Ray Tracer --
+            bevy_egui::egui::CollapsingHeader::new("Ray Tracer")
+                .default_open(false)
+                .show(ui, |ui| {
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.interop_max_steps, 50.0..=1000.0)
+                            .text("Max Steps"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.interop_step_size, 0.01..=1.0)
+                            .text("Step Size"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.fov_scale, 0.1..=5.0).text("FOV Scale"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.depth_far, 100.0..=10000.0)
+                            .text("Far Plane"),
+                    );
+                    slider_toggle(ui, &mut u.interop_parity_mode, "Parity Mode");
+                });
+
+            // -- Accretion Disk --
+            bevy_egui::egui::CollapsingHeader::new("Accretion Disk")
+                .default_open(false)
+                .show(ui, |ui| {
+                    slider_toggle(ui, &mut u.adisk_enabled, "Enabled");
+                    slider_toggle(ui, &mut u.adisk_particle, "Particle Mode");
+                    slider_toggle(ui, &mut u.adisk_lit, "Lighting");
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.adisk_height, 0.0..=2.0).text("Height"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.adisk_density_v, 0.0..=5.0)
+                            .text("Density V"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.adisk_density_h, 0.0..=5.0)
+                            .text("Density H"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.adisk_noise_scale, 0.1..=20.0)
+                            .text("Noise Scale"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.adisk_noise_lod, 0.0..=10.0)
+                            .text("Noise LOD"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.adisk_speed, 0.0..=5.0).text("Speed"),
+                    );
+                });
+
+            // -- Redshift & Doppler --
+            bevy_egui::egui::CollapsingHeader::new("Redshift & Doppler")
+                .default_open(false)
+                .show(ui, |ui| {
+                    slider_toggle(ui, &mut u.enable_redshift, "Redshift");
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.doppler_strength, 0.0..=3.0)
+                            .text("Doppler Strength"),
+                    );
+                });
+
+            // -- Hawking Radiation --
+            bevy_egui::egui::CollapsingHeader::new("Hawking Radiation")
+                .default_open(false)
+                .show(ui, |ui| {
+                    slider_toggle(ui, &mut u.hawking_glow_enabled, "Enabled");
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.hawking_temp_scale, 0.01..=1e6)
+                            .logarithmic(true)
+                            .text("Temp Scale"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.hawking_glow_intensity, 0.0..=10.0)
+                            .text("Intensity"),
+                    );
+                    slider_toggle(ui, &mut u.use_hawking_luts, "Use LUTs");
+                });
+
+            // -- LUT Configuration --
+            bevy_egui::egui::CollapsingHeader::new("LUT Configuration")
+                .default_open(false)
+                .show(ui, |ui| {
+                    slider_toggle(ui, &mut u.use_luts, "Emissivity LUTs");
+                    slider_toggle(ui, &mut u.use_spectral_lut, "Spectral LUT");
+                    slider_toggle(ui, &mut u.use_noise_texture, "Noise Texture");
+                    slider_toggle(ui, &mut u.use_grmhd, "GRMHD");
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.noise_texture_scale, 0.1..=10.0)
+                            .text("Noise Tex Scale"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.lut_radius_min, 1.0..=10.0)
+                            .text("LUT r_min"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.lut_radius_max, 3.0..=50.0)
+                            .text("LUT r_max"),
+                    );
+                });
+
+            // -- GRB Modulation --
+            bevy_egui::egui::CollapsingHeader::new("GRB Modulation")
+                .default_open(false)
+                .show(ui, |ui| {
+                    slider_toggle(ui, &mut u.use_grb_modulation, "Enabled");
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.grb_time, 0.0..=100.0).text("GRB Time"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.grb_time_min, 0.0..=50.0)
+                            .text("GRB t_min"),
+                    );
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.grb_time_max, 50.0..=200.0)
+                            .text("GRB t_max"),
+                    );
+                });
+
+            // -- Background --
+            bevy_egui::egui::CollapsingHeader::new("Background")
+                .default_open(false)
+                .show(ui, |ui| {
+                    slider_toggle(ui, &mut u.background_enabled, "Enabled");
+                    ui.add(
+                        bevy_egui::egui::Slider::new(&mut u.background_intensity, 0.0..=3.0)
+                            .text("Intensity"),
+                    );
+                });
+        });
+}
+
+/// Toggle slider for boolean-as-f32 uniforms (0.0 = off, 1.0 = on).
+fn slider_toggle(ui: &mut bevy_egui::egui::Ui, value: &mut f32, label: &str) {
+    let mut on = *value > 0.5;
+    if ui.checkbox(&mut on, label).changed() {
+        *value = if on { 1.0 } else { 0.0 };
+    }
 }
 
 #[cfg(test)]

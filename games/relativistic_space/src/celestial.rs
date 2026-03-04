@@ -9,6 +9,8 @@ use gororoba_bevy_gr::{
     AccretionDisk, BlackHole, GrDiagnostics, GrEngine, GrParams, MetricType, SpacetimeDomain,
 };
 
+use crate::blackhole_material::{ActiveBlackHoleMaterial, BlackHoleMaterial, spawn_blackhole_quad};
+use crate::lut_loader::LutAssets;
 use crate::states::SpaceSimState;
 
 /// Configuration for the celestial scene.
@@ -61,8 +63,15 @@ impl Plugin for CelestialPlugin {
     }
 }
 
-/// Spawn the spacetime domain with a black hole and accretion disk.
-fn setup_celestial(mut commands: Commands, config: Res<CelestialConfig>) {
+/// Spawn the spacetime domain with a black hole, accretion disk, and ray-traced quad.
+fn setup_celestial(
+    mut commands: Commands,
+    config: Res<CelestialConfig>,
+    luts: Option<Res<LutAssets>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut bh_materials: ResMut<Assets<BlackHoleMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
     let metric = if config.spin.abs() < 1e-12 {
         MetricType::Schwarzschild
     } else {
@@ -82,6 +91,19 @@ fn setup_celestial(mut commands: Commands, config: Res<CelestialConfig>) {
         },
         GrDiagnostics::default(),
     ));
+
+    // Spawn the ray-traced black hole quad if LUTs are loaded.
+    if let Some(luts) = luts {
+        let color_map: Handle<Image> = asset_server.load("textures/color_map.png");
+        let handle = spawn_blackhole_quad(
+            &mut commands,
+            &mut meshes,
+            &mut bh_materials,
+            &luts,
+            color_map,
+        );
+        commands.insert_resource(ActiveBlackHoleMaterial { handle });
+    }
 }
 
 /// Remove celestial objects when leaving.

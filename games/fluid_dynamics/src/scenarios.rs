@@ -35,7 +35,7 @@ impl Default for WindTunnelConfig {
             nz: 32,
             freestream_velocity: [0.05, 0.0, 0.0],
             tau: 0.8,
-            substeps: 3,
+            substeps: 15,
             selected_preset: VehiclePreset::Sphere,
         }
     }
@@ -105,6 +105,7 @@ fn setup_wind_tunnel(
             u_init: config.freestream_velocity,
             force: [0.0, 0.0, 0.0],
             substeps: config.substeps,
+            use_soa: true,
         },
         SimulationDiagnostics::default(),
     ));

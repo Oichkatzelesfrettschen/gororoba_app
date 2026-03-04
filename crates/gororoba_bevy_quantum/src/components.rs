@@ -106,6 +106,31 @@ impl Default for CasimirParams {
     }
 }
 
+/// Configuration for 3D Casimir energy field computation.
+///
+/// When present on a QuantumDomain entity alongside CasimirPlate and
+/// CasimirParams, the casimir_field_system will compute a full 3D
+/// energy density grid suitable for volume rendering.
+#[derive(Component)]
+pub struct CasimirFieldConfig {
+    /// Grid resolution (nx, ny, nz) for the 3D energy field.
+    pub resolution: (usize, usize, usize),
+    /// Spatial bounds: (x_min, x_max, y_min, y_max, z_min, z_max).
+    pub bounds: (f64, f64, f64, f64, f64, f64),
+    /// Whether the 3D field needs recomputation.
+    pub dirty: bool,
+}
+
+impl Default for CasimirFieldConfig {
+    fn default() -> Self {
+        Self {
+            resolution: (8, 8, 8),
+            bounds: (-2.0, 2.0, -0.1, 1.1, -2.0, 2.0),
+            dirty: true,
+        }
+    }
+}
+
 /// Quantum simulation parameters.
 #[derive(Component)]
 pub struct QuantumParams {
@@ -173,5 +198,14 @@ mod tests {
         let params = QuantumParams::default();
         assert_eq!(params.substeps, 1);
         assert_eq!(params.subsystem_size, 4);
+    }
+
+    #[test]
+    fn casimir_field_config_default() {
+        let config = CasimirFieldConfig::default();
+        assert_eq!(config.resolution, (8, 8, 8));
+        assert!(config.dirty);
+        let (x_min, x_max, _, _, _, _) = config.bounds;
+        assert!(x_min < x_max);
     }
 }

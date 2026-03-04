@@ -7,8 +7,8 @@
 use bevy::prelude::*;
 
 use gororoba_bevy_quantum::{
-    CasimirParams, CasimirPlate, PlateGeometry, QuantumDiagnostics, QuantumDomain, QuantumEngine,
-    QuantumParams, SpinLattice,
+    CasimirFieldConfig, CasimirParams, CasimirPlate, PlateGeometry, QuantumDiagnostics,
+    QuantumDomain, QuantumEngine, QuantumParams, SpinLattice,
 };
 
 use crate::states::QuantumSimState;
@@ -63,6 +63,7 @@ impl Plugin for NanostructurePlugin {
                     plate_editor_system,
                     plate_gizmo_system,
                     lattice_gizmo_system,
+                    casimir_field_gizmo_system,
                     update_results_system,
                 )
                     .run_if(in_state(QuantumSimState::Building)),
@@ -72,7 +73,7 @@ impl Plugin for NanostructurePlugin {
 
 /// Spawn the quantum domain with spin lattice and Casimir plates.
 fn setup_nanostructure(mut commands: Commands, config: Res<NanostructureConfig>) {
-    // Spawn quantum domain with spin lattice.
+    // Spawn quantum domain with spin lattice and 3D Casimir field.
     commands.spawn((
         QuantumDomain,
         SpinLattice {
@@ -89,6 +90,11 @@ fn setup_nanostructure(mut commands: Commands, config: Res<NanostructureConfig>)
             position: [0.0, config.plate_separation / 2.0, 0.0],
         },
         CasimirParams::default(),
+        CasimirFieldConfig {
+            resolution: (8, 8, 8),
+            bounds: (-2.0, 2.0, -0.1, config.plate_separation + 0.1, -2.0, 2.0),
+            dirty: true,
+        },
     ));
 
     // Spawn additional plate pairs at different positions.
@@ -123,7 +129,7 @@ fn teardown_nanostructure(mut commands: Commands, query: Query<Entity, With<Quan
 /// Allow the player to adjust plate separation with Q/E keys.
 fn plate_editor_system(
     keys: Res<ButtonInput<KeyCode>>,
-    mut plates: Query<&mut CasimirPlate, With<QuantumDomain>>,
+    mut plates: Query<(&mut CasimirPlate, Option<&mut CasimirFieldConfig>), With<QuantumDomain>>,
 ) {
     let delta = if keys.pressed(KeyCode::KeyQ) {
         -0.01
@@ -133,10 +139,16 @@ fn plate_editor_system(
         return;
     };
 
-    for mut plate in &mut plates {
+    for (mut plate, field_cfg) in &mut plates {
         if let PlateGeometry::ParallelPlates { ref mut separation } = plate.geometry {
             *separation = (*separation + delta).max(0.1);
-            plate.position[1] = *separation / 2.0;
+            let new_sep = *separation;
+            plate.position[1] = new_sep / 2.0;
+            // Mark field dirty so the 3D energy density is recomputed.
+            if let Some(mut cfg) = field_cfg {
+                cfg.bounds.3 = new_sep + 0.1;
+                cfg.dirty = true;
+            }
         }
     }
 }
@@ -226,6 +238,88 @@ fn lattice_gizmo_system(
                 let pos_i = center + Vec3::new(radius * angle_i.cos(), 0.0, radius * angle_i.sin());
                 let pos_j = center + Vec3::new(radius * angle_j.cos(), 0.0, radius * angle_j.sin());
                 gizmos.line(pos_i, pos_j, Color::srgb(0.4, 0.4, 0.6));
+            }
+        }
+    }
+}
+
+/// Visualize the 3D Casimir energy density field as colored gizmo cubes.
+///
+/// Cell color maps from blue (weak) to red (strong negative energy).
+/// Only renders if the field has been computed by the quantum plugin.
+#[allow(clippy::type_complexity)]
+fn casimir_field_gizmo_system(
+    engine: Res<QuantumEngine>,
+    domain: Query<(Entity, &CasimirPlate), (With<QuantumDomain>, With<CasimirFieldConfig>)>,
+    mut gizmos: Gizmos,
+) {
+    for (entity, plate) in &domain {
+        let Some(inst) = engine.get(entity) else {
+            continue;
+        };
+        let Some(ref field) = inst.casimir_field_3d else {
+            continue;
+        };
+
+        let (nx, ny, nz) = field.resolution;
+        let (x_min, x_max, y_min, y_max, z_min, z_max) = field.bounds;
+        if nx == 0 || ny == 0 || nz == 0 {
+            continue;
+        }
+
+        let dx = (x_max - x_min) / nx as f64;
+        let dy = (y_max - y_min) / ny as f64;
+        let dz = (z_max - z_min) / nz as f64;
+        let cell_size = Vec3::new(dx as f32, dy as f32, dz as f32) * 0.8;
+
+        // Find energy range for color mapping.
+        let e_min = field
+            .data
+            .iter()
+            .copied()
+            .filter(|v| v.is_finite())
+            .fold(0.0_f64, f64::min);
+        let e_max = field
+            .data
+            .iter()
+            .copied()
+            .filter(|v| v.is_finite())
+            .fold(0.0_f64, f64::max);
+        let e_range = (e_max - e_min).max(1e-30);
+
+        let offset = Vec3::new(
+            plate.position[0] as f32,
+            plate.position[1] as f32,
+            plate.position[2] as f32,
+        );
+
+        for iz in 0..nz {
+            for iy in 0..ny {
+                for ix in 0..nx {
+                    let idx = iz * ny * nx + iy * nx + ix;
+                    let energy = field.data[idx];
+                    if !energy.is_finite() {
+                        continue;
+                    }
+
+                    // Normalize to [0, 1] where 0 = most negative.
+                    let t = ((energy - e_min) / e_range) as f32;
+
+                    // Map: blue (weak, t~1) -> red (strong negative, t~0).
+                    let color = Color::srgba(1.0 - t, 0.2, t, 0.3 + 0.5 * (1.0 - t));
+
+                    let center = offset
+                        + Vec3::new(
+                            (x_min + (ix as f64 + 0.5) * dx) as f32,
+                            (y_min + (iy as f64 + 0.5) * dy) as f32,
+                            (z_min + (iz as f64 + 0.5) * dz) as f32,
+                        );
+
+                    gizmos.cube(
+                        Transform::from_translation(center).with_scale(cell_size),
+                        color,
+                    );
+                }
             }
         }
     }

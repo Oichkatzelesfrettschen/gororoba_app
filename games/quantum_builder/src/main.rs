@@ -5,7 +5,9 @@
 //
 // Flow: Menu -> Building -> Measuring -> Results -> Menu.
 
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
+use bevy_egui::EguiGlobalSettings;
 use gororoba_bevy_core::{GororobaCorePlugin, HudState, OrbitCamera};
 use gororoba_bevy_quantum::QuantumPlugin;
 
@@ -17,13 +19,24 @@ mod ui;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Gororoba: Quantum Builder".into(),
-                ..default()
-            }),
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Gororoba: Quantum Builder".into(),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(LogPlugin {
+                    filter: "info,wgpu_hal=error,bevy_render::view::window=error".into(),
+                    ..default()
+                }),
+        )
+        .insert_resource(EguiGlobalSettings {
+            enable_absorb_bevy_input_system: true,
             ..default()
-        }))
+        })
         .add_plugins(GororobaCorePlugin)
         .add_plugins(QuantumPlugin)
         .add_plugins(states::QuantumStatesPlugin)

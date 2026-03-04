@@ -2,9 +2,9 @@
 // velocity field visualization, and pedagogy content.
 
 use bevy::prelude::*;
-use bevy_egui::EguiContexts;
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass};
 
-use gororoba_bevy_core::{PedagogyMode, PedagogyState};
+use gororoba_bevy_core::{EguiReady, PedagogyMode, PedagogyState};
 use gororoba_bevy_lbm::{LbmCpuEngine, SimulationDiagnostics, VoxelGrid};
 
 use crate::aerodynamics::AerodynamicResults;
@@ -17,22 +17,31 @@ pub struct FluidUiPlugin;
 
 impl Plugin for FluidUiPlugin {
     fn build(&self, app: &mut App) {
+        let egui_ready = resource_exists::<EguiReady>;
         app.add_systems(Startup, setup_pedagogy)
             .add_systems(
-                Update,
-                menu_ui_system.run_if(in_state(FluidGamePhase::Menu)),
+                EguiPrimaryContextPass,
+                menu_ui_system
+                    .run_if(in_state(FluidGamePhase::Menu))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                design_ui_system.run_if(in_state(FluidSimState::VehicleDesign)),
+                EguiPrimaryContextPass,
+                design_ui_system
+                    .run_if(in_state(FluidSimState::VehicleDesign))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                tunnel_ui_system.run_if(in_state(FluidSimState::WindTunnel)),
+                EguiPrimaryContextPass,
+                tunnel_ui_system
+                    .run_if(in_state(FluidSimState::WindTunnel))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                results_ui_system.run_if(in_state(FluidSimState::Results)),
+                EguiPrimaryContextPass,
+                results_ui_system
+                    .run_if(in_state(FluidSimState::Results))
+                    .run_if(egui_ready),
             )
             .add_systems(
                 Update,
@@ -88,6 +97,9 @@ fn menu_ui_system(mut contexts: EguiContexts) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {
@@ -119,6 +131,9 @@ fn design_ui_system(
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("Vehicle Designer")
         .anchor(
@@ -131,6 +146,7 @@ fn design_ui_system(
             ui.horizontal(|ui| {
                 if ui
                     .selectable_label(config.selected_preset == VehiclePreset::Sphere, "Sphere")
+                    .on_hover_text("Sphere: high drag baseline.\nSymmetric bluff body, Cd ~ 0.47.")
                     .clicked()
                 {
                     config.selected_preset = VehiclePreset::Sphere;
@@ -138,6 +154,10 @@ fn design_ui_system(
                 }
                 if ui
                     .selectable_label(config.selected_preset == VehiclePreset::Wedge, "Wedge")
+                    .on_hover_text(
+                        "Wedge: moderate streamlining.\n\
+                         Triangular cross-section tapering into the flow.",
+                    )
                     .clicked()
                 {
                     config.selected_preset = VehiclePreset::Wedge;
@@ -145,6 +165,11 @@ fn design_ui_system(
                 }
                 if ui
                     .selectable_label(config.selected_preset == VehiclePreset::Airfoil, "Airfoil")
+                    .on_hover_text(
+                        "Airfoil: low drag, high lift.\n\
+                         NACA-like elliptical cross-section\n\
+                         with tapered trailing edge.",
+                    )
                     .clicked()
                 {
                     config.selected_preset = VehiclePreset::Airfoil;
@@ -166,23 +191,40 @@ fn design_ui_system(
             ui.heading("Simulation Parameters");
 
             ui.horizontal(|ui| {
-                ui.label("Tau:");
+                ui.label("Tau:").on_hover_text(
+                    "Relaxation time (BGK collision operator).\n\
+                     Controls fluid viscosity: nu = (tau - 0.5) / 3.\n\
+                     Lower tau = less viscous (turbulent).\n\
+                     Higher tau = more viscous (laminar).\n\
+                     Must be > 0.5 for stability.",
+                );
                 let mut tau_f32 = config.tau as f32;
                 ui.add(bevy_egui::egui::Slider::new(&mut tau_f32, 0.51..=2.0));
                 config.tau = tau_f32 as f64;
             });
 
             ui.horizontal(|ui| {
-                ui.label("Velocity:");
+                ui.label("Velocity:").on_hover_text(
+                    "Freestream velocity (lattice units).\n\
+                     The incoming flow speed from the left.\n\
+                     Higher values = faster flow, higher Re.\n\
+                     Keep below ~0.1 for LBM stability\n\
+                     (Mach number < 0.3).",
+                );
                 let mut vel = config.freestream_velocity[0] as f32;
                 ui.add(bevy_egui::egui::Slider::new(&mut vel, 0.001..=0.15));
                 config.freestream_velocity[0] = vel as f64;
             });
 
             ui.horizontal(|ui| {
-                ui.label("Substeps:");
+                ui.label("Substeps:").on_hover_text(
+                    "LBM iterations per frame update.\n\
+                     More substeps = faster simulation\n\
+                     progress but higher CPU cost per frame.\n\
+                     1 = real-time, 30 = 30x accelerated.",
+                );
                 let mut sub = config.substeps as i32;
-                ui.add(bevy_egui::egui::Slider::new(&mut sub, 1..=10));
+                ui.add(bevy_egui::egui::Slider::new(&mut sub, 1..=30));
                 config.substeps = sub as usize;
             });
 
@@ -218,6 +260,9 @@ fn tunnel_ui_system(
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("Wind Tunnel")
         .anchor(
@@ -249,6 +294,9 @@ fn results_ui_system(mut contexts: EguiContexts, results: Res<AerodynamicResults
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {
@@ -307,7 +355,7 @@ fn velocity_gizmo_system(
                             continue; // Skip solid cells.
                         }
 
-                        let (_, u) = inst.solver.get_macroscopic(x, y, z);
+                        let (_, u) = inst.get_macroscopic(x, y, z);
                         let speed = (u[0] * u[0] + u[1] * u[1] + u[2] * u[2]).sqrt();
 
                         if speed < 1e-6 {

@@ -3,6 +3,7 @@
 // Flow: Menu -> Exploring -> PuzzleSolving -> Results -> Menu.
 
 use bevy::prelude::*;
+use bevy_egui::input::EguiWantsInput;
 
 /// Top-level game phase.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -43,23 +44,29 @@ impl Plugin for PuzzleStatesPlugin {
     }
 }
 
-/// Transition from Menu to Active when Space is pressed.
 fn menu_start_system(
     keys: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     mut next_phase: ResMut<NextState<PuzzleGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keys.just_pressed(KeyCode::Space) {
         next_phase.set(PuzzleGamePhase::Active);
     }
 }
 
-/// Advance through sub-states when Enter is pressed.
 fn advance_state_system(
     keys: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     state: Res<State<PuzzleSimState>>,
     mut next_state: ResMut<NextState<PuzzleSimState>>,
     mut next_phase: ResMut<NextState<PuzzleGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keys.just_pressed(KeyCode::Enter) {
         match state.get() {
             PuzzleSimState::Exploring => {

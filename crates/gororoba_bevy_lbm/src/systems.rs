@@ -25,6 +25,7 @@ pub fn solver_init_system(
             tau: params.tau,
             rho_init: params.rho_init,
             u_init: params.u_init,
+            use_soa: params.use_soa,
         };
         engine.create_solver(entity, &config);
 
@@ -47,14 +48,16 @@ pub fn solver_init_system(
 
 /// Advance the LBM simulation by the configured number of substeps.
 ///
-/// Runs in FixedUpdate to decouple physics from framerate.
+/// Uses `evolve_with_boundaries()` which applies bounce-back boundary
+/// conditions after every streaming step, enforcing no-slip walls at
+/// solid cells. Runs in FixedUpdate to decouple physics from framerate.
 pub fn simulation_step_system(
     mut engine: ResMut<LbmCpuEngine>,
     query: Query<(Entity, &SimulationParams), With<FluidDomain>>,
 ) {
     for (entity, params) in &query {
         if let Some(inst) = engine.get_mut(entity) {
-            inst.solver.evolve(params.substeps);
+            inst.evolve_with_boundaries(params.substeps);
         }
     }
 }
@@ -68,11 +71,19 @@ pub fn diagnostics_system(
 ) {
     for (entity, mut diag) in &mut query {
         if let Some(inst) = engine.get(entity) {
-            diag.timestep = inst.solver.timestep;
-            diag.total_mass = inst.solver.total_mass();
-            diag.max_velocity = inst.solver.max_velocity();
-            diag.mean_velocity = inst.solver.mean_velocity();
-            diag.stable = inst.solver.is_stable();
+            if let Some(soa) = &inst.soa {
+                diag.timestep = soa.timestep;
+                diag.total_mass = soa.total_mass();
+                diag.max_velocity = soa.max_velocity();
+                diag.mean_velocity = soa.mean_velocity();
+                diag.stable = soa.is_stable();
+            } else {
+                diag.timestep = inst.solver.timestep;
+                diag.total_mass = inst.solver.total_mass();
+                diag.max_velocity = inst.solver.max_velocity();
+                diag.mean_velocity = inst.solver.mean_velocity();
+                diag.stable = inst.solver.is_stable();
+            }
         }
     }
 }
@@ -113,6 +124,7 @@ mod tests {
             tau: 0.8,
             rho_init: 1.0,
             u_init,
+            use_soa: false,
         }
     }
 

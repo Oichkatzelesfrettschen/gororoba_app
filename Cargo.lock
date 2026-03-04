@@ -3849,11 +3849,13 @@ dependencies = [
 name = "gororoba_bevy_lbm"
 version = "0.1.0"
 dependencies = [
+ "ash",
  "bevy",
  "gororoba_bevy_core",
  "lbm_3d",
  "lbm_core",
  "lbm_vulkan",
+ "rayon",
 ]
 
 [[package]]
@@ -4902,8 +4904,6 @@ dependencies = [
 [[package]]
 name = "naga"
 version = "27.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "066cf25f0e8b11ee0df221219010f213ad429855f57c494f995590c861a9a7d8"
 dependencies = [
  "arrayvec",
  "bit-set",

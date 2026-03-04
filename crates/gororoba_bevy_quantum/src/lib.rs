@@ -14,8 +14,8 @@ pub mod resources;
 pub mod systems;
 
 pub use components::{
-    CasimirParams, CasimirPlate, EntangledPair, PlateGeometry, QuantumDiagnostics, QuantumDomain,
-    QuantumParams, SpinLattice,
+    CasimirFieldConfig, CasimirParams, CasimirPlate, EntangledPair, PlateGeometry,
+    QuantumDiagnostics, QuantumDomain, QuantumParams, SpinLattice,
 };
 pub use resources::{QuantumConfig, QuantumEngine, QuantumInstance};
 
@@ -30,6 +30,7 @@ impl Plugin for QuantumPlugin {
                     systems::quantum_init_system,
                     systems::mera_step_system,
                     systems::casimir_system,
+                    systems::casimir_field_system,
                 )
                     .chain(),
             )

@@ -3,6 +3,7 @@
 // Flow: Menu -> Building -> Measuring -> Results -> Menu.
 
 use bevy::prelude::*;
+use bevy_egui::input::EguiWantsInput;
 
 /// Top-level game phase.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -45,8 +46,12 @@ impl Plugin for QuantumStatesPlugin {
 
 fn menu_start_system(
     keys: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     mut next_phase: ResMut<NextState<QuantumGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keys.just_pressed(KeyCode::Space) {
         next_phase.set(QuantumGamePhase::Active);
     }
@@ -54,10 +59,14 @@ fn menu_start_system(
 
 fn advance_state_system(
     keys: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     state: Res<State<QuantumSimState>>,
     mut next_state: ResMut<NextState<QuantumSimState>>,
     mut next_phase: ResMut<NextState<QuantumGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keys.just_pressed(KeyCode::Enter) {
         match state.get() {
             QuantumSimState::Building => next_state.set(QuantumSimState::Measuring),

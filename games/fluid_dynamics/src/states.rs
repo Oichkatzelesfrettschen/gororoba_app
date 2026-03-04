@@ -4,6 +4,7 @@
 // vehicle design -> wind tunnel -> results flow.
 
 use bevy::prelude::*;
+use bevy_egui::input::EguiWantsInput;
 
 /// Game-specific substates for the fluid dynamics game.
 ///
@@ -50,8 +51,12 @@ impl Plugin for FluidStatesPlugin {
 /// Transition from Menu to Active when Space is pressed.
 fn menu_start_system(
     keyboard: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     mut next_phase: ResMut<NextState<FluidGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keyboard.just_pressed(KeyCode::Space) {
         next_phase.set(FluidGamePhase::Active);
     }
@@ -60,10 +65,14 @@ fn menu_start_system(
 /// Handle state transitions within the active game phase.
 fn advance_state_system(
     keyboard: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     sim_state: Res<State<FluidSimState>>,
     mut next_sim: ResMut<NextState<FluidSimState>>,
     mut next_phase: ResMut<NextState<FluidGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keyboard.just_pressed(KeyCode::Enter) {
         match sim_state.get() {
             FluidSimState::VehicleDesign => {

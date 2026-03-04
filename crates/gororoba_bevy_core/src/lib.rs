@@ -3,6 +3,7 @@
 // Sub-plugins: camera, HUD, pedagogy panels, input abstractions.
 
 use bevy::prelude::*;
+use bevy_egui::EguiContexts;
 
 pub mod camera;
 pub mod hud;
@@ -13,6 +14,32 @@ pub use camera::{FlyCamera, FlyCameraPlugin, OrbitCamera, OrbitCameraPlugin};
 pub use hud::{HudPlugin, HudState};
 pub use input::{GameAction, GameInputPlugin, InputBindings};
 pub use pedagogy::{PedagogyMode, PedagogyPlugin, PedagogyState};
+
+/// Marker resource inserted once the egui context has completed its first
+/// pass. UI systems should use `.run_if(resource_exists::<EguiReady>)` to
+/// avoid calling egui before fonts and layout state are initialized.
+#[derive(Resource)]
+pub struct EguiReady;
+
+/// Detects when the egui context has completed at least one pass and
+/// inserts the [`EguiReady`] marker resource.
+fn detect_egui_ready(
+    mut commands: Commands,
+    mut contexts: EguiContexts,
+    ready: Option<Res<EguiReady>>,
+) {
+    if ready.is_some() {
+        return;
+    }
+    // If we can get the context AND it has completed at least one pass,
+    // fonts and layout are available.
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+    if ctx.cumulative_pass_nr() > 0 {
+        commands.insert_resource(EguiReady);
+    }
+}
 
 /// Top-level plugin bundle that registers all shared infrastructure.
 pub struct GororobaCorePlugin;
@@ -25,6 +52,7 @@ impl Plugin for GororobaCorePlugin {
             .add_plugins(PedagogyPlugin)
             .add_plugins(GameInputPlugin)
             .init_state::<GameState>()
+            .add_systems(Update, detect_egui_ready)
             .add_systems(Update, handle_game_actions);
     }
 }

@@ -66,7 +66,7 @@ fn compute_aero_system(
 ) {
     for (entity, voxels) in &domain_query {
         if let Some(inst) = engine.get(entity) {
-            let (drag, lift) = inst.compute_drag_lift(voxels, config.freestream_velocity);
+            let (drag, lift) = inst.compute_drag_lift(voxels);
             results.drag = drag;
             results.lift = lift;
 

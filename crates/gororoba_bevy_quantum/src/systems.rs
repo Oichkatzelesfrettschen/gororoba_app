@@ -10,7 +10,8 @@ use bevy::prelude::*;
 use casimir_core::energy::WorldlineCasimirConfig;
 
 use crate::components::{
-    CasimirParams, CasimirPlate, QuantumDiagnostics, QuantumDomain, QuantumParams, SpinLattice,
+    CasimirFieldConfig, CasimirParams, CasimirPlate, PlateGeometry, QuantumDiagnostics,
+    QuantumDomain, QuantumParams, SpinLattice,
 };
 use crate::resources::{QuantumConfig, QuantumEngine};
 
@@ -68,6 +69,51 @@ pub fn casimir_system(
     }
 }
 
+/// Compute 3D Casimir energy density field when CasimirFieldConfig is present.
+///
+/// Only recomputes when `dirty` is true, to avoid expensive Monte Carlo
+/// computation every frame. Runs in FixedUpdate after casimir_system.
+pub fn casimir_field_system(
+    mut engine: ResMut<QuantumEngine>,
+    mut query: Query<
+        (
+            Entity,
+            &CasimirPlate,
+            &CasimirParams,
+            &mut CasimirFieldConfig,
+        ),
+        With<QuantumDomain>,
+    >,
+) {
+    for (entity, plate, params, mut field_cfg) in &mut query {
+        if !field_cfg.dirty {
+            continue;
+        }
+
+        let PlateGeometry::ParallelPlates { separation } = plate.geometry else {
+            continue;
+        };
+
+        if let Some(inst) = engine.get_mut(entity) {
+            let config = WorldlineCasimirConfig {
+                n_loop_points: params.n_loop_points,
+                n_loops: params.n_loops,
+                t_min: params.t_min,
+                t_max: params.t_max,
+                n_t_points: params.n_t_points,
+                seed: params.seed,
+            };
+            inst.compute_casimir_field_3d_parallel_plates(
+                separation,
+                field_cfg.bounds,
+                field_cfg.resolution,
+                &config,
+            );
+            field_cfg.dirty = false;
+        }
+    }
+}
+
 /// Update diagnostic components from quantum engine state.
 pub fn diagnostics_system(
     engine: Res<QuantumEngine>,
@@ -115,6 +161,38 @@ mod tests {
         let inst = engine.get(entity).unwrap();
         assert_eq!(inst.n_sites, 16);
         assert!(inst.layer_count() > 0);
+    }
+
+    #[test]
+    fn casimir_field_3d_via_instance() {
+        let mut engine = QuantumEngine::default();
+        let entity = Entity::from_bits(1);
+        let config = QuantumConfig {
+            n_sites: 8,
+            local_dim: 2,
+            seed: 42,
+        };
+        engine.create_instance(entity, &config);
+
+        let inst = engine.get_mut(entity).unwrap();
+        let mc_config = WorldlineCasimirConfig {
+            n_loop_points: 16,
+            n_loops: 50,
+            t_min: 0.01,
+            t_max: 3.0,
+            n_t_points: 4,
+            seed: 42,
+        };
+        inst.compute_casimir_field_3d_parallel_plates(
+            1.0,
+            (-1.0, 1.0, 0.0, 1.0, -1.0, 1.0),
+            (2, 2, 2),
+            &mc_config,
+        );
+
+        let field = inst.casimir_field_3d.as_ref().unwrap();
+        assert_eq!(field.data.len(), 8);
+        assert!(field.data.iter().all(|v| v.is_finite()));
     }
 
     #[test]

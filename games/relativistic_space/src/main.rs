@@ -5,30 +5,49 @@
 //
 // Flow: Menu -> Observing -> Navigating -> Results -> Menu.
 
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
+use bevy_egui::EguiGlobalSettings;
 use gororoba_bevy_core::{GororobaCorePlugin, HudState, OrbitCamera};
 use gororoba_bevy_gr::GrPlugin;
 
+mod blackhole_material;
 mod celestial;
+mod lut_loader;
 mod spacecraft;
 mod states;
 mod ui;
+mod validation;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Gororoba: Relativistic Space".into(),
-                ..default()
-            }),
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Gororoba: Relativistic Space".into(),
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(LogPlugin {
+                    filter: "info,wgpu_hal=error,bevy_render::view::window=error".into(),
+                    ..default()
+                }),
+        )
+        .insert_resource(EguiGlobalSettings {
+            enable_absorb_bevy_input_system: true,
             ..default()
-        }))
+        })
         .add_plugins(GororobaCorePlugin)
         .add_plugins(GrPlugin)
+        .add_plugins(lut_loader::LutLoaderPlugin)
+        .add_plugins(blackhole_material::BlackHoleMaterialPlugin)
         .add_plugins(states::SpaceStatesPlugin)
         .add_plugins(celestial::CelestialPlugin)
         .add_plugins(spacecraft::SpacecraftPlugin)
         .add_plugins(ui::SpaceUiPlugin)
+        .add_plugins(validation::ValidationPlugin)
         .add_systems(Startup, setup_scene)
         .run();
 }
@@ -77,5 +96,8 @@ mod tests {
         let _ = celestial::MissionResults::default();
         let _ = spacecraft::Spacecraft::default();
         let _ = spacecraft::TimeDilationDisplay::default();
+        let _ = validation::ValidationMetrics::default();
+        let _ = validation::ValidationResults::default();
+        let _ = blackhole_material::BlackHoleUniformData::default();
     }
 }

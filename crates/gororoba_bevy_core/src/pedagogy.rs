@@ -4,7 +4,7 @@
 // panel framework and progressive disclosure logic.
 
 use bevy::prelude::*;
-use bevy_egui::{EguiContexts, EguiPlugin};
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 
 pub struct PedagogyPlugin;
 
@@ -13,8 +13,10 @@ impl Plugin for PedagogyPlugin {
         if !app.is_plugin_added::<EguiPlugin>() {
             app.add_plugins(EguiPlugin::default());
         }
-        app.init_resource::<PedagogyState>()
-            .add_systems(Update, pedagogy_panel_system);
+        app.init_resource::<PedagogyState>().add_systems(
+            EguiPrimaryContextPass,
+            pedagogy_panel_system.run_if(resource_exists::<crate::EguiReady>),
+        );
     }
 }
 
@@ -62,6 +64,9 @@ fn pedagogy_panel_system(mut contexts: EguiContexts, mut state: ResMut<PedagogyS
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::SidePanel::left("pedagogy_panel")
         .default_width(300.0)

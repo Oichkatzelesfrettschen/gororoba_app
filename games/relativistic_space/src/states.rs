@@ -3,6 +3,7 @@
 // Flow: Menu -> Observing -> Navigating -> Results -> Menu.
 
 use bevy::prelude::*;
+use bevy_egui::input::EguiWantsInput;
 
 /// Top-level game phase.
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
@@ -45,8 +46,12 @@ impl Plugin for SpaceStatesPlugin {
 
 fn menu_start_system(
     keys: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     mut next_phase: ResMut<NextState<SpaceGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keys.just_pressed(KeyCode::Space) {
         next_phase.set(SpaceGamePhase::Active);
     }
@@ -54,10 +59,14 @@ fn menu_start_system(
 
 fn advance_state_system(
     keys: Res<ButtonInput<KeyCode>>,
+    egui_input: Res<EguiWantsInput>,
     state: Res<State<SpaceSimState>>,
     mut next_state: ResMut<NextState<SpaceSimState>>,
     mut next_phase: ResMut<NextState<SpaceGamePhase>>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
     if keys.just_pressed(KeyCode::Enter) {
         match state.get() {
             SpaceSimState::Observing => next_state.set(SpaceSimState::Navigating),

@@ -1,0 +1,4 @@
+# Use native CPU features for release builds to enable AVX2/FMA
+# autovectorization on the host machine.
+[target.'cfg(target_arch = "x86_64")']
+rustflags = ["-C", "target-cpu=native"]

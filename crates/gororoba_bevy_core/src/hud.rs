@@ -1,7 +1,7 @@
 // egui-based HUD overlay for runtime diagnostics and game UI.
 
 use bevy::prelude::*;
-use bevy_egui::{EguiContexts, EguiPlugin};
+use bevy_egui::{EguiContexts, EguiPlugin, EguiPrimaryContextPass};
 
 pub struct HudPlugin;
 
@@ -10,8 +10,10 @@ impl Plugin for HudPlugin {
         if !app.is_plugin_added::<EguiPlugin>() {
             app.add_plugins(EguiPlugin::default());
         }
-        app.init_resource::<HudState>()
-            .add_systems(Update, hud_ui_system);
+        app.init_resource::<HudState>().add_systems(
+            EguiPrimaryContextPass,
+            hud_ui_system.run_if(resource_exists::<crate::EguiReady>),
+        );
     }
 }
 
@@ -51,6 +53,9 @@ fn hud_ui_system(mut contexts: EguiContexts, hud: Res<HudState>) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("HUD")
         .anchor(

@@ -7,8 +7,10 @@ publish = false
 description = "LBM physics wrapped as a Bevy plugin"
 
 [dependencies]
+ash.workspace = true
 bevy.workspace = true
 gororoba_bevy_core = { path = "../gororoba_bevy_core" }
 lbm_vulkan.workspace = true
 lbm_3d.workspace = true
 lbm_core.workspace = true
+rayon.workspace = true

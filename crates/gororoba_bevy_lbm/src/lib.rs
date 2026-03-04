@@ -11,14 +11,16 @@ use bevy::prelude::*;
 pub mod components;
 pub mod compute_bridge;
 pub mod resources;
+pub mod soa_solver;
 pub mod systems;
 
 pub use components::{
     BoundaryConditions, BoundaryType, FluidDomain, SimulationDiagnostics, SimulationParams,
     VoxelGrid,
 };
-pub use compute_bridge::{GpuBridgeConfig, GpuFrameTarget};
+pub use compute_bridge::{GpuBridgeConfig, GpuFrameTarget, GpuVulkanEngine};
 pub use resources::{LbmCpuEngine, SolverConfig, SolverInstance};
+pub use soa_solver::LbmSolverSoA;
 
 pub struct LbmPlugin;
 
@@ -39,9 +41,11 @@ impl Plugin for LbmPlugin {
             .add_systems(
                 Update,
                 (
+                    compute_bridge::gpu_bridge_init_system,
                     systems::diagnostics_system,
                     compute_bridge::gpu_readback_system,
-                ),
+                )
+                    .chain(),
             )
             .add_systems(PostUpdate, systems::solver_cleanup_system);
     }

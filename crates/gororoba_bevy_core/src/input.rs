@@ -4,6 +4,7 @@
 // decoupling game logic from specific key bindings.
 
 use bevy::prelude::*;
+use bevy_egui::input::EguiWantsInput;
 
 pub struct GameInputPlugin;
 
@@ -46,8 +47,13 @@ impl Default for InputBindings {
 fn input_action_system(
     keyboard: Res<ButtonInput<KeyCode>>,
     bindings: Res<InputBindings>,
+    egui_input: Res<EguiWantsInput>,
     mut actions: MessageWriter<GameAction>,
 ) {
+    if egui_input.wants_any_keyboard_input() {
+        return;
+    }
+
     for (key, action) in &bindings.bindings {
         if keyboard.just_pressed(*key) {
             actions.write(*action);

@@ -2,9 +2,9 @@
 // results screen, and pedagogy content.
 
 use bevy::prelude::*;
-use bevy_egui::EguiContexts;
+use bevy_egui::{EguiContexts, EguiPrimaryContextPass};
 
-use gororoba_bevy_core::{PedagogyMode, PedagogyState};
+use gororoba_bevy_core::{EguiReady, PedagogyMode, PedagogyState};
 use gororoba_bevy_quantum::{QuantumDiagnostics, QuantumDomain, QuantumEngine};
 
 use crate::lattice_editor::LatticeSelection;
@@ -17,22 +17,31 @@ pub struct QuantumUiPlugin;
 
 impl Plugin for QuantumUiPlugin {
     fn build(&self, app: &mut App) {
+        let egui_ready = resource_exists::<EguiReady>;
         app.add_systems(Startup, setup_pedagogy)
             .add_systems(
-                Update,
-                menu_ui_system.run_if(in_state(QuantumGamePhase::Menu)),
+                EguiPrimaryContextPass,
+                menu_ui_system
+                    .run_if(in_state(QuantumGamePhase::Menu))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                builder_ui_system.run_if(in_state(QuantumSimState::Building)),
+                EguiPrimaryContextPass,
+                builder_ui_system
+                    .run_if(in_state(QuantumSimState::Building))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                measurement_ui_system.run_if(in_state(QuantumSimState::Measuring)),
+                EguiPrimaryContextPass,
+                measurement_ui_system
+                    .run_if(in_state(QuantumSimState::Measuring))
+                    .run_if(egui_ready),
             )
             .add_systems(
-                Update,
-                results_ui_system.run_if(in_state(QuantumSimState::Results)),
+                EguiPrimaryContextPass,
+                results_ui_system
+                    .run_if(in_state(QuantumSimState::Results))
+                    .run_if(egui_ready),
             );
     }
 }
@@ -83,6 +92,9 @@ fn menu_ui_system(mut contexts: EguiContexts) {
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {
@@ -119,6 +131,9 @@ fn builder_ui_system(
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("Quantum Builder")
         .anchor(
@@ -173,6 +188,9 @@ fn measurement_ui_system(
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::Window::new("Measurement")
         .anchor(
@@ -236,6 +254,9 @@ fn results_ui_system(mut contexts: EguiContexts, results: Res<ExperimentResults>
     let Ok(ctx) = contexts.ctx_mut() else {
         return;
     };
+    if !ctx.content_rect().is_finite() {
+        return;
+    }
 
     bevy_egui::egui::CentralPanel::default().show(ctx, |ui| {
         ui.vertical_centered(|ui| {

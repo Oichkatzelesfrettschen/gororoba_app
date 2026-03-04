@@ -38,6 +38,9 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt"] }
 urlencoding = "2.1.3"
 
+# Vulkan (must match lbm_vulkan's ash version)
+ash = { version = "0.38", features = ["debug", "libloading", "loaded"] }
+
 # Bevy engine
 bevy = "0.18"
 bevy_egui = "0.39"
@@ -56,6 +59,7 @@ spin_tomography_core = { git = "https://github.com/Oichkatzelesfrettschen/open_g
 
 # Shared numerics (match open_gororoba pin: statrs 0.18 requires nalgebra ^0.33)
 nalgebra = "0.33"
+rayon = "1.10"
 
 # Local dev: override git deps with local paths when ../open_gororoba exists
 [patch."https://github.com/Oichkatzelesfrettschen/open_gororoba"]
@@ -69,6 +73,14 @@ cosmology_core = { path = "../open_gororoba/crates/cosmology_core" }
 quantum_core = { path = "../open_gororoba/crates/quantum_core" }
 casimir_core = { path = "../open_gororoba/crates/casimir_core" }
 spin_tomography_core = { path = "../open_gororoba/crates/spin_tomography_core" }
+
+# Backport naga 28 fix for VUID-StandaloneSpirv-MemorySemantics-10871:
+# naga 27 emits UNIFORM_MEMORY/WORKGROUP_MEMORY bits without non-relaxed
+# ordering on atomic ops, violating the Vulkan spec.  The patch removes
+# storage-class bits, making semantics purely relaxed (valid per spec).
+# Remove this patch when Bevy upgrades to naga >= 28.
+[patch.crates-io]
+naga = { path = "patches/naga-27.0.3" }
 
 [profile.dev]
 opt-level = 1
