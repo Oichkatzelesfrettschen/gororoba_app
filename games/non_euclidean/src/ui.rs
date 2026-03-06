@@ -11,6 +11,7 @@ use crate::portals::PortalTraversalCount;
 use crate::puzzles::{PuzzleState, introductory_puzzles};
 use crate::rooms::{ActiveRoom, DistortionState};
 use crate::states::{PuzzleGamePhase, PuzzleSimState};
+use crate::strategy_mode::StrategyModeState;
 
 /// Plugin for game-specific UI systems.
 pub struct PuzzleUiPlugin;
@@ -35,6 +36,12 @@ impl Plugin for PuzzleUiPlugin {
                 EguiPrimaryContextPass,
                 puzzle_ui_system
                     .run_if(in_state(PuzzleSimState::PuzzleSolving))
+                    .run_if(egui_ready),
+            )
+            .add_systems(
+                EguiPrimaryContextPass,
+                strategy_mode_ui_system
+                    .run_if(in_state(PuzzleSimState::StrategyMode))
                     .run_if(egui_ready),
             )
             .add_systems(
@@ -113,6 +120,7 @@ fn menu_ui_system(mut contexts: EguiContexts) {
             ui.label("  1-9: select basis element (puzzles)");
             ui.label("  Space: compute product (puzzles)");
             ui.label("  Backspace: undo selection");
+            ui.label("  Tab: toggle strategy mode (puzzles)");
             ui.label("  Enter: advance to next phase");
             ui.label("  F1: toggle HUD");
             ui.label("  F2: toggle pedagogy panel");
@@ -221,6 +229,127 @@ fn puzzle_ui_system(mut contexts: EguiContexts, puzzle_state: Res<PuzzleState>) 
 
             ui.add_space(10.0);
             ui.label("Press ENTER for results");
+        });
+}
+
+/// Strategy mode UI: shows blocked bases, opponent moves, minimax value.
+fn strategy_mode_ui_system(
+    mut contexts: EguiContexts,
+    puzzle_state: Res<PuzzleState>,
+    strategy_state: Res<StrategyModeState>,
+) {
+    let Ok(ctx) = contexts.ctx_mut() else {
+        return;
+    };
+
+    let puzzles = introductory_puzzles();
+    let current = puzzle_state.current_puzzle;
+    let puzzle = if current < puzzles.len() {
+        Some(&puzzles[current])
+    } else {
+        None
+    };
+
+    bevy_egui::egui::Window::new("Strategy Mode")
+        .anchor(
+            bevy_egui::egui::Align2::LEFT_TOP,
+            bevy_egui::egui::vec2(10.0, 10.0),
+        )
+        .resizable(false)
+        .show(ctx, |ui| {
+            ui.heading("Adversarial Puzzle");
+            ui.add_space(5.0);
+
+            if let Some(puzzle) = puzzle {
+                ui.label(puzzle.name);
+                ui.label(puzzle.description);
+                ui.separator();
+
+                // Available (non-blocked) bases.
+                let available: Vec<usize> = puzzle
+                    .available_bases
+                    .iter()
+                    .copied()
+                    .filter(|b| !strategy_state.blocked_bases.contains(b))
+                    .collect();
+                ui.label(format!("Available bases: {:?}", available));
+
+                // Blocked bases (red).
+                if !strategy_state.blocked_bases.is_empty() {
+                    ui.colored_label(
+                        bevy_egui::egui::Color32::from_rgb(200, 80, 80),
+                        format!("Blocked by Opponent: {:?}", strategy_state.blocked_bases),
+                    );
+                }
+
+                ui.label(format!("Selected: {:?}", puzzle_state.selected_elements));
+
+                // Minimax evaluation.
+                ui.separator();
+                ui.label(format!(
+                    "Minimax value: {:.2}",
+                    strategy_state.minimax_value
+                ));
+                ui.label(format!(
+                    "Opponent blocks: {} / {}",
+                    strategy_state.blocks_placed, strategy_state.max_blocks
+                ));
+
+                // Move history.
+                if !strategy_state.move_history.is_empty() {
+                    ui.separator();
+                    ui.label("Move history:");
+                    for (i, (player_move, opp_block)) in
+                        strategy_state.move_history.iter().enumerate()
+                    {
+                        let block_str = opp_block
+                            .map(|b| format!(", O blocks e{}", b))
+                            .unwrap_or_default();
+                        ui.label(format!(
+                            "  {}. P selects e{}{}",
+                            i + 1,
+                            player_move,
+                            block_str
+                        ));
+                    }
+                }
+
+                if let Some(ref result) = puzzle_state.result {
+                    ui.separator();
+                    ui.label("Result:");
+                    let nonzero: Vec<(usize, f64)> = result
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, v)| v.abs() > 1e-10)
+                        .map(|(i, v)| (i, *v))
+                        .collect();
+                    if nonzero.is_empty() {
+                        ui.label("  = 0 (zero element)");
+                    } else {
+                        for (i, v) in &nonzero {
+                            if *i == 0 {
+                                ui.label(format!("  {:.4}", v));
+                            } else {
+                                ui.label(format!("  {:.4} * e{}", v, i));
+                            }
+                        }
+                    }
+                }
+
+                if puzzle_state.solved {
+                    ui.add_space(10.0);
+                    ui.colored_label(
+                        bevy_egui::egui::Color32::GREEN,
+                        "SOLVED despite Opponent blocks!",
+                    );
+                }
+            } else {
+                ui.label("All puzzles complete!");
+            }
+
+            ui.add_space(10.0);
+            ui.label("Tab: switch to normal mode");
+            ui.label("Enter: view results");
         });
 }
 

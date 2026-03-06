@@ -2554,8 +2554,10 @@ name = "cosmology_core"
 version = "0.1.0"
 dependencies = [
  "gauss-quad",
+ "nalgebra 0.33.2",
  "rand 0.8.5",
  "rand_distr 0.4.3",
+ "rayon",
  "statrs",
 ]
 
@@ -3836,6 +3838,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "gororoba_bevy_game_semantics"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "gororoba_bevy_core",
+]
+
+[[package]]
 name = "gororoba_bevy_gr"
 version = "0.1.0"
 dependencies = [
@@ -4377,6 +4387,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "interaction_arena"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_egui",
+ "gororoba_bevy_core",
+ "gororoba_bevy_game_semantics",
+]
+
+[[package]]
 name = "interpolate_name"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4597,6 +4617,7 @@ dependencies = [
  "ash",
  "env_logger",
  "gpu-allocator 0.28.0",
+ "half",
  "image",
  "log",
  "naga",

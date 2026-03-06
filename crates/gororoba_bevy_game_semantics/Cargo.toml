@@ -1,0 +1,11 @@
+[package]
+name = "gororoba_bevy_game_semantics"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Game semantics and classical game theory as a Bevy plugin"
+
+[dependencies]
+bevy.workspace = true
+gororoba_bevy_core = { path = "../gororoba_bevy_core" }

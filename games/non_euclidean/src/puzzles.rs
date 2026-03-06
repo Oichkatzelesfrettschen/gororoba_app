@@ -117,6 +117,7 @@ fn puzzle_input_system(
     keys: Res<ButtonInput<KeyCode>>,
     mut puzzle_state: ResMut<PuzzleState>,
     engine: Res<CdAlgebraEngine>,
+    strategy_state: Res<crate::strategy_mode::StrategyModeState>,
 ) {
     let puzzles = introductory_puzzles();
     let current = puzzle_state.current_puzzle;
@@ -139,7 +140,10 @@ fn puzzle_input_system(
     ];
 
     for (key, basis_idx) in key_map {
-        if keys.just_pressed(key) && puzzle.available_bases.contains(&basis_idx) {
+        if keys.just_pressed(key)
+            && puzzle.available_bases.contains(&basis_idx)
+            && !crate::strategy_mode::is_blocked(&strategy_state, basis_idx)
+        {
             puzzle_state.selected_elements.push(basis_idx);
         }
     }

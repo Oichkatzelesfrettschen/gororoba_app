@@ -188,6 +188,7 @@ pub fn gpu_bridge_init_system(
         &context,
         params.grid_dim,
         (bridge.width, bridge.height),
+        lbm_vulkan::Precision::FP32,
     ) {
         Ok(eng) => eng,
         Err(e) => {

@@ -22,6 +22,8 @@ pub enum PuzzleSimState {
     Exploring,
     /// Solve a specific puzzle by manipulating basis elements.
     PuzzleSolving,
+    /// Adversarial strategy mode: Opponent blocks your moves.
+    StrategyMode,
     /// Review results after completing a puzzle sequence.
     Results,
 }
@@ -72,12 +74,24 @@ fn advance_state_system(
             PuzzleSimState::Exploring => {
                 next_state.set(PuzzleSimState::PuzzleSolving);
             }
-            PuzzleSimState::PuzzleSolving => {
+            PuzzleSimState::PuzzleSolving | PuzzleSimState::StrategyMode => {
                 next_state.set(PuzzleSimState::Results);
             }
             PuzzleSimState::Results => {
                 next_phase.set(PuzzleGamePhase::Menu);
             }
+        }
+    }
+    // Tab toggles between PuzzleSolving and StrategyMode.
+    if keys.just_pressed(KeyCode::Tab) {
+        match state.get() {
+            PuzzleSimState::PuzzleSolving => {
+                next_state.set(PuzzleSimState::StrategyMode);
+            }
+            PuzzleSimState::StrategyMode => {
+                next_state.set(PuzzleSimState::PuzzleSolving);
+            }
+            _ => {}
         }
     }
 }

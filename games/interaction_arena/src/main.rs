@@ -1,21 +1,19 @@
-// Non-Euclidean puzzle game: rooms connected by hypercomplex rotations.
+// Interaction Arena: game semantics + classical game theory strategy game.
 //
-// Uses Cayley-Dickson algebra via gororoba_bevy_algebra for non-associative
-// geometry, zero-divisor portals, and hypercomplex puzzle mechanics.
+// Teaches arenas, strategies, conditions, composition, payoffs, Nash
+// equilibria, and Abramsky's semantic cube across 10 progressive levels.
 //
-// Flow: Menu -> Exploring -> PuzzleSolving -> Results -> Menu.
+// Flow: Menu -> ArenaView -> StrategyBuilder -> Execution -> Results -> Menu.
 
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy_egui::EguiGlobalSettings;
-use gororoba_bevy_algebra::AlgebraPlugin;
 use gororoba_bevy_core::{GororobaCorePlugin, HudState, OrbitCamera};
+use gororoba_bevy_game_semantics::GameSemanticsPlugin;
 
-mod portals;
-mod puzzles;
-mod rooms;
+mod builder;
+mod execution;
 mod states;
-mod strategy_mode;
 mod ui;
 
 fn main() {
@@ -24,7 +22,7 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Gororoba: Non-Euclidean".into(),
+                        title: "Gororoba: Interaction Arena".into(),
                         ..default()
                     }),
                     ..default()
@@ -39,33 +37,28 @@ fn main() {
             ..default()
         })
         .add_plugins(GororobaCorePlugin)
-        .add_plugins(AlgebraPlugin)
-        .add_plugins(states::PuzzleStatesPlugin)
-        .add_plugins(rooms::RoomsPlugin)
-        .add_plugins(portals::PortalsPlugin)
-        .add_plugins(puzzles::PuzzlesPlugin)
-        .add_plugins(strategy_mode::StrategyModePlugin)
-        .add_plugins(ui::PuzzleUiPlugin)
+        .add_plugins(GameSemanticsPlugin)
+        .add_plugins(states::InteractionStatesPlugin)
+        .add_plugins(builder::BuilderPlugin)
+        .add_plugins(execution::ExecutionPlugin)
+        .add_plugins(ui::InteractionUiPlugin)
         .add_systems(Startup, setup_scene)
         .run();
 }
 
-/// Set up the initial 3D scene: camera, lights.
 fn setup_scene(mut commands: Commands, mut hud: ResMut<HudState>) {
-    // Orbit camera looking at the center of the room layout.
     commands.spawn((
         Camera3d::default(),
         OrbitCamera {
-            radius: 60.0,
-            pitch: -0.4,
-            yaw: 0.3,
+            radius: 50.0,
+            pitch: -0.3,
+            yaw: 0.4,
             target: Vec3::ZERO,
             ..default()
         },
-        Transform::from_xyz(40.0, 30.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_xyz(30.0, 20.0, 40.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    // Directional light.
     commands.spawn((
         DirectionalLight {
             illuminance: 10000.0,
@@ -75,14 +68,12 @@ fn setup_scene(mut commands: Commands, mut hud: ResMut<HudState>) {
         Transform::from_xyz(10.0, 20.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    // Global ambient light.
     commands.insert_resource(GlobalAmbientLight {
         color: Color::WHITE,
         brightness: 400.0,
         affects_lightmapped_meshes: true,
     });
 
-    // Enable HUD by default.
     hud.visible = true;
 }
 
@@ -92,13 +83,7 @@ mod tests {
 
     #[test]
     fn game_modules_exist() {
-        // Verify all modules are accessible.
-        let _ = states::PuzzleGamePhase::Menu;
-        let _ = states::PuzzleSimState::Exploring;
-        let _ = states::PuzzleSimState::StrategyMode;
-        let _ = rooms::RoomLayout::default();
-        let _ = portals::PortalTraversalCount::default();
-        let _ = puzzles::PuzzleState::default();
-        let _ = strategy_mode::StrategyModeState::default();
+        let _ = states::InteractionArenaPhase::Menu;
+        let _ = states::SimState::ArenaView;
     }
 }

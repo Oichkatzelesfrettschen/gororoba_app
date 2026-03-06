@@ -1,0 +1,17 @@
+[package]
+name = "interaction_arena"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Game semantics + classical game theory strategy game"
+
+[[bin]]
+name = "interaction_arena"
+path = "src/main.rs"
+
+[dependencies]
+bevy.workspace = true
+bevy_egui.workspace = true
+gororoba_bevy_core = { path = "../../crates/gororoba_bevy_core" }
+gororoba_bevy_game_semantics = { path = "../../crates/gororoba_bevy_game_semantics" }

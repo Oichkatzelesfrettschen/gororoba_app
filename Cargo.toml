@@ -9,10 +9,12 @@ members = [
     "crates/gororoba_bevy_algebra",
     "crates/gororoba_bevy_gr",
     "crates/gororoba_bevy_quantum",
+    "crates/gororoba_bevy_game_semantics",
     "games/fluid_dynamics",
     "games/non_euclidean",
     "games/relativistic_space",
     "games/quantum_builder",
+    "games/interaction_arena",
     "tools/xtask",
 ]
 resolver = "2"
