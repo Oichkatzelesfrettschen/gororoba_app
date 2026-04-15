@@ -3,6 +3,13 @@ members = [
     "apps/studio_web",
     "apps/physics_sandbox",
     "apps/synthesis_arena",
+    "crates/gororoba_kernel_api",
+    "crates/gororoba_kernel_algebra",
+    "crates/gororoba_kernel_fluid",
+    "crates/gororoba_kernel_fluid_vulkan",
+    "crates/gororoba_kernel_fluid_cuda",
+    "crates/gororoba_kernel_gr",
+    "crates/gororoba_kernel_quantum",
     "crates/gororoba_shared_core",
     "crates/gororoba_bevy_core",
     "crates/gororoba_bevy_lbm",
@@ -15,6 +22,18 @@ members = [
     "games/relativistic_space",
     "games/quantum_builder",
     "games/interaction_arena",
+    "tools/xtask",
+]
+default-members = [
+    "apps/studio_web",
+    "apps/physics_sandbox",
+    "apps/synthesis_arena",
+    "crates/gororoba_kernel_api",
+    "crates/gororoba_kernel_algebra",
+    "crates/gororoba_kernel_fluid",
+    "crates/gororoba_kernel_gr",
+    "crates/gororoba_kernel_quantum",
+    "crates/gororoba_shared_core",
     "tools/xtask",
 ]
 resolver = "2"
@@ -40,19 +59,46 @@ tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "fmt"] }
 urlencoding = "2.1.3"
 
-# Vulkan (must match lbm_vulkan's ash version)
+# Vulkan
 ash = { version = "0.38", features = ["debug", "libloading", "loaded"] }
+cudarc = { version = "0.19", default-features = false, features = [
+    "std", "driver", "nvrtc", "dynamic-loading", "cuda-version-from-build-system",
+] }
 
 # Bevy engine
-bevy = "0.18"
-bevy_egui = "0.39"
+bevy = { version = "=0.18.1", default-features = false, features = [
+    "async_executor",
+    "bevy_asset",
+    "bevy_camera",
+    "bevy_color",
+    "bevy_core_pipeline",
+    "bevy_gizmos",
+    "bevy_gizmos_render",
+    "bevy_image",
+    "bevy_input_focus",
+    "bevy_light",
+    "bevy_log",
+    "bevy_mesh",
+    "bevy_pbr",
+    "bevy_render",
+    "bevy_shader",
+    "bevy_state",
+    "bevy_text",
+    "bevy_window",
+    "bevy_winit",
+    "custom_cursor",
+    "default_font",
+    "multi_threaded",
+    "png",
+    "std",
+    "wayland",
+    "x11",
+] }
+bevy_egui = { version = "=0.39.1", default-features = false, features = ["default_fonts", "render"] }
 
-# open_gororoba physics crates (git deps for CI; [patch] overrides locally)
-lbm_vulkan = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
-lbm_3d = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
-lbm_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+# open_gororoba discovery/reference crates
 cd_kernel = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
-algebra_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
+gororoba_algebra = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
 gr_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
 cosmology_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
 quantum_core = { git = "https://github.com/Oichkatzelesfrettschen/open_gororoba", branch = "main" }
@@ -65,11 +111,17 @@ rayon = "1.10"
 
 # Local dev: override git deps with local paths when ../open_gororoba exists
 [patch."https://github.com/Oichkatzelesfrettschen/open_gororoba"]
-lbm_vulkan = { path = "../open_gororoba/crates/lbm_vulkan" }
-lbm_3d = { path = "../open_gororoba/crates/lbm_3d" }
-lbm_core = { path = "../open_gororoba/crates/lbm_core" }
 cd_kernel = { path = "../open_gororoba/crates/cd_kernel" }
-algebra_core = { path = "../open_gororoba/crates/algebra_core" }
+gororoba_algebra = { path = "../open_gororoba/crates/gororoba_algebra" }
+algebra_analysis = { path = "../open_gororoba/crates/algebra_analysis" }
+algebra_experimental = { path = "../open_gororoba/crates/algebra_experimental" }
+gororoba_gpu_bridge = { path = "../open_gororoba/crates/gororoba_gpu_bridge" }
+verified_core = { path = "../open_gororoba/crates/verified_core" }
+lbm_core = { path = "../open_gororoba/crates/lbm_core" }
+data_core = { path = "../open_gororoba/crates/data_core" }
+gororoba_contracts = { path = "../open_gororoba/crates/gororoba_contracts" }
+gororoba_sparse_grid = { path = "../open_gororoba/crates/gororoba_sparse_grid" }
+stats_core = { path = "../open_gororoba/crates/stats_core" }
 gr_core = { path = "../open_gororoba/crates/gr_core" }
 cosmology_core = { path = "../open_gororoba/crates/cosmology_core" }
 quantum_core = { path = "../open_gororoba/crates/quantum_core" }
@@ -85,7 +137,26 @@ spin_tomography_core = { path = "../open_gororoba/crates/spin_tomography_core" }
 naga = { path = "patches/naga-27.0.3" }
 
 [profile.dev]
+incremental = false
 opt-level = 1
 
 [profile.dev.package."*"]
+opt-level = 1
+
+[profile.dev.package.gororoba_kernel_algebra]
+opt-level = 3
+
+[profile.dev.package.gororoba_kernel_fluid]
+opt-level = 3
+
+[profile.dev.package.gororoba_kernel_gr]
+opt-level = 3
+
+[profile.dev.package.gororoba_kernel_quantum]
+opt-level = 3
+
+[profile.dev.package.gororoba_kernel_fluid_vulkan]
+opt-level = 3
+
+[profile.dev.package.gororoba_kernel_fluid_cuda]
 opt-level = 3

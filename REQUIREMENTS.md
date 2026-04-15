@@ -2,60 +2,97 @@
 
 ## Scope
 
-This repository is a Rust-only frontend workspace that consumes backend API/data
-from `open_gororoba` (read-only contract boundary).
+This repository is a Rust workspace containing:
+
+- self-contained engine/kernel crates
+- Bevy game binaries
+- operator/teaching apps
+
+It may still use `open_gororoba` for selected upstream-backed domains during the
+transition, but the target direction is local runtime ownership inside
+`gororoba_app`.
 
 ## Toolchain requirements
 
-1. Rust toolchain with Cargo (`stable` or newer compatible with edition `2024`).
-2. Network access only for initial crate download during `cargo build`.
-3. No Node/npm, Python runtime, or system package manager dependencies are required
-   to build or run the app.
-4. Desktop packaging lane is Rust-first and self-contained for host builds; optional
-   cross-target compilation may require platform linkers/toolchains already present
-   on your machine (`rustup target add ...` and target C linker).
+1. Rust toolchain with Cargo compatible with edition `2024`.
+2. A host graphics stack suitable for Bevy 0.18.
+3. Network access for initial dependency resolution when `Cargo.lock` changes.
+4. No Python or Node runtime is required for the Rust build/test lanes.
+5. Optional upstream parity work may require a sibling checkout at
+   `../open_gororoba`, but the local algebra lane builds without it.
 
-## Environment variables
+## Build discipline
 
-- `GOROROBA_BACKEND_URL` (optional, default: `http://127.0.0.1:8088`)
-- `GOROROBA_APP_HOST` (optional, default: `127.0.0.1`)
-- `GOROROBA_APP_PORT` (optional, default: `8090`)
-- `GOROROBA_UI_CACHE_TTL_MS` (optional, default: `1500`)
-- `PHYSICS_SANDBOX_HOST` (optional, default: `127.0.0.1`)
-- `PHYSICS_SANDBOX_PORT` (optional, default: `8093`)
-- `SYNTHESIS_ARENA_HOST` (optional, default: `127.0.0.1`)
-- `SYNTHESIS_ARENA_PORT` (optional, default: `8094`)
-- `GOROROBA_ENABLE_CROSS` (optional, default: `0`; set `1` to attempt cross-target desktop packaging)
-- `GOROROBA_CROSS_TOOLCHAINS_READY` (optional, default: `0`; set `1` once cross linkers are configured)
-- `GOROROBA_PACKAGE_TARGETS` (optional; CSV override for desktop target matrix)
-- `GOROROBA_PACKAGE_BINS` (optional; CSV override for packaged binaries)
-- `GOROROBA_PACKAGE_PROFILE` (optional, default: `release`)
-- `GOROROBA_PACKAGE_OUT_DIR` (optional, default: `dist/desktop`)
-- `GOROROBA_PACKAGE_ALLOW_MISSING` (optional, default: `1`)
+1. Treat warnings as errors in lint lanes.
+2. Prefer locked commands after the lockfile is updated intentionally.
+3. Keep module-specific requirements current under `docs/requirements/`.
+4. When adding new workspace crates, refresh `Cargo.lock` and rerun locked gates.
+5. Use repo-local Cargo isolation when multiple projects are active on the same
+   machine.
+6. The isolated Cargo wrapper defaults to half of detected CPUs for build jobs,
+   test threads, and Rayon threads; override with `GOROROBA_CARGO_JOBS`,
+   `CARGO_BUILD_JOBS`, `RUST_TEST_THREADS`, or `RAYON_NUM_THREADS` if needed.
+7. On Linux x86_64, the isolated Cargo wrapper prefers `clang` plus `mold`
+   automatically when they are installed to reduce Bevy-heavy link time.
+8. `sccache` is supported as an opt-in accelerator via `GOROROBA_USE_SCCACHE=1`,
+   but it is not enabled by default because some host environments still inject
+   incompatible incremental settings.
 
-## Build and validation
+## Primary commands
 
 From repository root:
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace --all-targets
+scripts/cargo-isolated.sh fmt --all --check
+scripts/cargo-isolated.sh clippy --workspace --all-targets -- -D warnings
+scripts/cargo-isolated.sh test --workspace --all-targets --locked
+scripts/cargo-isolated.sh check --workspace --all-targets --locked
+```
+
+Fast local kernel loop:
+
+```bash
+scripts/cargo-isolated.sh check
+scripts/cargo-isolated.sh clippy -p gororoba_kernel_api -p gororoba_kernel_algebra -p gororoba_kernel_gr -p gororoba_kernel_quantum --all-targets -- -D warnings
+```
+
+Run key binaries:
+
+```bash
+cargo run -p non_euclidean
+cargo run -p fluid_dynamics
+cargo run -p relativistic_space
+cargo run -p quantum_builder
+cargo run -p interaction_arena
 cargo run -p gororoba_studio_web
 cargo run -p physics_sandbox
 cargo run -p synthesis_arena
-scripts/generate_mobile_contract.sh
-scripts/package_desktop_matrix.sh
-cargo run -p xtask -- verify-deps
 ```
 
-## Reproducibility discipline
+## Module requirements
 
-1. Dependency versions are pinned at workspace root (`Cargo.toml`) and referenced in:
-   - `docs/DEPENDENCY_REFERENCE.md`
-2. Tests run offline against local mock backends.
-3. Frontend integration follows `docs/CROSS_REPO_INTERFACE_POLICY.md` and expects backend API `studio.v1`.
-4. Frontend shell-data cache is invalidated after mutation routes (`run`, `suite`, `benchmark`, `reproducibility`) to keep views fresh.
-5. Desktop artifacts and checksums are generated by `xtask` and emitted under `dist/desktop/`.
-6. Mobile contract output is generated deterministically to `apps/mobile_spike/contracts/`.
-7. Desktop packaging preflight skips missing/unready targets deterministically before build attempts.
+- Local algebra kernel lane: `docs/requirements/algebra.md`
+- Local fluid migration lane: `docs/requirements/fluid.md`
+- Local fluid Vulkan requirements: `docs/requirements/fluid_vulkan.md`
+- Local fluid CUDA requirements: `docs/requirements/fluid_cuda.md`
+- Local relativity migration lane: `docs/requirements/gr.md`
+- Local quantum migration lane: `docs/requirements/quantum.md`
+- Game architecture reference: `docs/GAME_ARCHITECTURE.md`
+- Bevy-heavy performance analysis: `docs/BEVY_HEAVY_TESTS.md`
+
+## Sanity checks
+
+1. The root README, this file, and `docs/GAME_ARCHITECTURE.md` must agree on the
+   repository role.
+2. Runtime dependencies on `open_gororoba` should be called out explicitly by
+   module until each lane is localized. The fluid CPU lane is now local; the
+   local Vulkan/CUDA lanes currently provide probing plus backend surfaces, but
+   not full local execution yet.
+3. New local kernels must expose stable Rust APIs before game integration.
+4. `scripts/cargo-isolated.sh` should be the default verification entry point
+   when other repositories or agents are building at the same time.
+5. The workspace Bevy dependency is intentionally feature-slimmed; new code
+   should add Bevy features only when a concrete API requires them.
+6. Compile-heavy Cargo commands should still be serialized per repository; do
+   not run feature-heavy Bevy/CUDA/Vulkan lanes in parallel against the same
+   `CARGO_HOME` and target directory.

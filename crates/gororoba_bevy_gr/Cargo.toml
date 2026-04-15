@@ -8,6 +8,5 @@ description = "General relativity as a Bevy plugin"
 
 [dependencies]
 bevy.workspace = true
-gororoba_bevy_core = { path = "../gororoba_bevy_core" }
-gr_core.workspace = true
-cosmology_core.workspace = true
+gororoba_kernel_api = { path = "../gororoba_kernel_api" }
+gororoba_kernel_gr = { path = "../gororoba_kernel_gr" }

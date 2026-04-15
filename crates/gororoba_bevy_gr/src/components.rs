@@ -4,19 +4,11 @@
 
 use bevy::prelude::*;
 
+pub use gororoba_kernel_api::relativity::MetricFamily as MetricType;
+
 /// Marker component for entities in a GR spacetime domain.
 #[derive(Component, Default)]
 pub struct SpacetimeDomain;
-
-/// Type of black hole metric.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
-pub enum MetricType {
-    /// Non-rotating (Schwarzschild) black hole.
-    #[default]
-    Schwarzschild,
-    /// Rotating (Kerr) black hole with spin parameter a.
-    Kerr { spin: f64 },
-}
 
 /// Black hole component defining the central mass.
 #[derive(Component)]

@@ -164,12 +164,24 @@ fn puzzle_input_system(
                 .map(|&i| HypercomplexElement::basis(dim, i))
                 .collect();
 
-            // Multiply left-to-right: a * b * c * ...
-            let mut product = elements[0].coeffs.clone();
-            for elem in &elements[1..] {
-                product = inst.multiply(&product, &elem.coeffs);
-            }
-            puzzle_state.result = Some(product);
+            let result = if current == 1 && elements.len() >= 3 {
+                let ab = inst.multiply(&elements[0].coeffs, &elements[1].coeffs);
+                let ab_c = inst.multiply(&ab, &elements[2].coeffs);
+                let bc = inst.multiply(&elements[1].coeffs, &elements[2].coeffs);
+                let a_bc = inst.multiply(&elements[0].coeffs, &bc);
+                ab_c.iter()
+                    .zip(a_bc.iter())
+                    .map(|(lhs, rhs)| lhs - rhs)
+                    .collect()
+            } else {
+                // Multiply left-to-right: a * b * c * ...
+                let mut product = elements[0].coeffs.clone();
+                for elem in &elements[1..] {
+                    product = inst.multiply(&product, &elem.coeffs);
+                }
+                product
+            };
+            puzzle_state.result = Some(result);
         }
     }
 }

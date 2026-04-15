@@ -1,0 +1,12 @@
+[package]
+name = "gororoba_kernel_gr"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+publish = false
+description = "Local relativity kernel interfaces and CPU implementation for gororoba_app"
+
+[dependencies]
+gororoba_kernel_api = { path = "../gororoba_kernel_api" }
+gr_core.workspace = true
+cosmology_core.workspace = true

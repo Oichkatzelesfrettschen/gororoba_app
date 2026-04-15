@@ -1,8 +1,8 @@
 [meta]
 id = "GOROROBA-APP-ULTRA-ROADMAP-2026-02-13"
 status = "active"
-owner = "frontend"
-backend_source = "open_gororoba"
+owner = "engine"
+backend_source = "open_gororoba_reference_kernel"
 quality_policy = "warnings_as_errors"
 
 [[task]]
@@ -194,29 +194,95 @@ owner = "frontend"
 [[task]]
 id = "R-032"
 title = "Add evidence export to publication-ready markdown"
-status = "next"
-owner = "frontend"
+status = "queued"
+owner = "engine"
 
 [[task]]
 id = "R-033"
 title = "Harden CI gate scripts for fully reproducible release builds"
-status = "next"
-owner = "frontend"
+status = "queued"
+owner = "engine"
 
 [[task]]
 id = "R-034"
 title = "Add installer-grade desktop bundles (deb/pkg/msi/pkg) with signatures"
-status = "next"
-owner = "frontend"
+status = "queued"
+owner = "engine"
 
 [[task]]
 id = "R-035"
 title = "Implement mobile host shells using shared Rust core contracts"
-status = "next"
-owner = "frontend"
+status = "queued"
+owner = "engine"
 
 [[task]]
 id = "R-036"
 title = "Publish open_gororoba backend alignment handoff contract and acceptance checklist"
 status = "done"
 owner = "frontend"
+
+[[task]]
+id = "K-001"
+title = "Define local kernel API crates for engine-owned runtime math"
+status = "done"
+owner = "engine"
+
+[[task]]
+id = "K-002"
+title = "Implement self-contained local Cayley-Dickson kernel"
+status = "done"
+owner = "engine"
+
+[[task]]
+id = "K-003"
+title = "Migrate gororoba_bevy_algebra from upstream runtime math to local kernel crates"
+status = "done"
+owner = "engine"
+
+[[task]]
+id = "K-004"
+title = "Make non_euclidean consume real local algebra for associator distortion and portal placement"
+status = "done"
+owner = "engine"
+
+[[task]]
+id = "K-005"
+title = "Document engine-first boundary and per-module requirements for the algebra lane"
+status = "done"
+owner = "engine"
+
+[[task]]
+id = "K-006"
+title = "Extract local fluid, relativity, quantum, and strategy kernels behind stable Rust APIs"
+status = "in_progress"
+owner = "engine"
+
+[[task]]
+id = "K-007"
+title = "Replace remaining upstream runtime dependencies with local engine implementations"
+status = "next"
+owner = "engine"
+
+[[task]]
+id = "K-008"
+title = "Use open_gororoba only for parity fixtures, research intake, and future upstream followback"
+status = "next"
+owner = "engine"
+
+[[task]]
+id = "K-009"
+title = "Define minimum stable local-kernel API surfaces for fluid, relativity, and quantum lanes"
+status = "done"
+owner = "engine"
+
+[[task]]
+id = "K-010"
+title = "Move the local SoA fluid solver into a pure kernel crate to decouple math tests from Bevy"
+status = "next"
+owner = "engine"
+
+[[task]]
+id = "K-011"
+title = "Add backend capability reporting and physical-core heavy-test tuning across local kernels"
+status = "next"
+owner = "engine"

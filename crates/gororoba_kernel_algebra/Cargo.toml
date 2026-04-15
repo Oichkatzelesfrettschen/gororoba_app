@@ -1,0 +1,11 @@
+[package]
+name = "gororoba_kernel_algebra"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Self-contained Cayley-Dickson kernel implementations for gororoba_app"
+
+[dependencies]
+gororoba_kernel_api = { path = "../gororoba_kernel_api" }
+rayon.workspace = true

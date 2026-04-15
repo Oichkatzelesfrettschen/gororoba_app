@@ -66,32 +66,12 @@ fn compute_aero_system(
 ) {
     for (entity, voxels) in &domain_query {
         if let Some(inst) = engine.get(entity) {
-            let (drag, lift) = inst.compute_drag_lift(voxels);
-            results.drag = drag;
-            results.lift = lift;
-
-            // Compute drag/lift coefficients.
-            // Cd = 2 * F_drag / (rho * u^2 * A)
-            let u_mag: f64 = config
-                .freestream_velocity
-                .iter()
-                .map(|v| v * v)
-                .sum::<f64>()
-                .sqrt();
-            let rho = 1.0; // initial density
-            let a = voxels.solid_count() as f64; // frontal area ~ solid count (rough)
-
-            if u_mag > 1e-12 && a > 0.0 {
-                results.drag_coefficient = 2.0 * drag.abs() / (rho * u_mag * u_mag * a);
-                results.lift_coefficient = 2.0 * lift.abs() / (rho * u_mag * u_mag * a);
-            }
-
-            // Reynolds number: Re = u * L / nu, where nu = (tau - 0.5) / 3
-            let l = (config.nx as f64).cbrt() * 10.0; // characteristic length
-            let nu = (config.tau - 0.5) / 3.0;
-            if nu > 1e-12 {
-                results.reynolds_number = u_mag * l / nu;
-            }
+            let snapshot = inst.aerodynamic_snapshot(voxels);
+            results.drag = snapshot.drag;
+            results.lift = snapshot.lift;
+            results.drag_coefficient = snapshot.drag_coefficient;
+            results.lift_coefficient = snapshot.lift_coefficient;
+            results.reynolds_number = snapshot.reynolds_number;
         }
 
         // MLUPS computation.

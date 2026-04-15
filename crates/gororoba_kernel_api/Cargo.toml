@@ -1,0 +1,7 @@
+[package]
+name = "gororoba_kernel_api"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Stable local kernel interfaces for the gororoba_app engine"

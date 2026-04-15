@@ -6,11 +6,14 @@ license = "GPL-2.0-only"
 publish = false
 description = "LBM physics wrapped as a Bevy plugin"
 
+[features]
+default = []
+fluid-vulkan = ["dep:gororoba_kernel_fluid_vulkan"]
+fluid-cuda = ["dep:gororoba_kernel_fluid_cuda"]
+
 [dependencies]
-ash.workspace = true
 bevy.workspace = true
-gororoba_bevy_core = { path = "../gororoba_bevy_core" }
-lbm_vulkan.workspace = true
-lbm_3d.workspace = true
-lbm_core.workspace = true
-rayon.workspace = true
+gororoba_kernel_api = { path = "../gororoba_kernel_api" }
+gororoba_kernel_fluid = { path = "../gororoba_kernel_fluid" }
+gororoba_kernel_fluid_vulkan = { path = "../gororoba_kernel_fluid_vulkan", optional = true }
+gororoba_kernel_fluid_cuda = { path = "../gororoba_kernel_fluid_cuda", optional = true }

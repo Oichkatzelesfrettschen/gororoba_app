@@ -1,4 +1,6 @@
 /target/
+/target-gororoba_app/
+/\.cargo-home/
 /dist/
 *.spv
 .DS_Store

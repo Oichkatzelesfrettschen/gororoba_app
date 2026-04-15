@@ -6,6 +6,7 @@
 use bevy::prelude::*;
 
 use gororoba_bevy_lbm::{FluidDomain, SimulationDiagnostics, SimulationParams, VoxelGrid};
+use gororoba_kernel_api::fluid::{CpuKernelFlavor, FluidExecutionConfig};
 
 use crate::states::FluidSimState;
 use crate::vehicle::{Vehicle, VehiclePreset, preset_voxels};
@@ -105,7 +106,10 @@ fn setup_wind_tunnel(
             u_init: config.freestream_velocity,
             force: [0.0, 0.0, 0.0],
             substeps: config.substeps,
-            use_soa: true,
+            execution: FluidExecutionConfig {
+                cpu_flavor: CpuKernelFlavor::SoA,
+                ..Default::default()
+            },
         },
         SimulationDiagnostics::default(),
     ));

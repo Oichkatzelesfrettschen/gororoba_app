@@ -1,0 +1,12 @@
+[package]
+name = "gororoba_kernel_fluid_cuda"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Local CUDA capability probing and backend surface for gororoba_app fluid kernels"
+
+[dependencies]
+cudarc.workspace = true
+gororoba_kernel_api = { path = "../gororoba_kernel_api" }
+gororoba_kernel_fluid = { path = "../gororoba_kernel_fluid" }

@@ -1,7 +1,7 @@
 // Cayley-Dickson algebra as a Bevy plugin.
 //
-// Wraps open_gororoba's cd_kernel and algebra_core for non-associative
-// geometry, zero-divisor portals, and hypercomplex rotations.
+// Uses gororoba_app's local kernel crates for non-associative geometry,
+// zero-divisor portals, and hypercomplex rotations.
 //
 // Algebra initialization and zero-divisor search run in FixedUpdate.
 // Diagnostics and portal spawning run in Update.
@@ -16,6 +16,7 @@ pub use components::{
     AlgebraDiagnostics, AlgebraDimension, AlgebraDomain, AlgebraParams, HypercomplexElement,
     ZeroDivisorPortal,
 };
+pub use gororoba_kernel_api::projection::{ProjectedPoint3, ProjectionSpec};
 pub use resources::{AlgebraConfig, AlgebraInstance, CdAlgebraEngine};
 
 pub struct AlgebraPlugin;

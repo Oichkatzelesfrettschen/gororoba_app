@@ -1,8 +1,7 @@
 // Quantum mechanics and Casimir effect as a Bevy plugin.
 //
-// Wraps open_gororoba's quantum_core, casimir_core, and
-// spin_tomography_core for MERA tensor networks, Casimir energy,
-// and quantum measurement.
+// Uses gororoba_app's local quantum kernel boundary for MERA tensor
+// networks, Casimir energy, and quantum measurement.
 //
 // MERA steps and Casimir computation run in FixedUpdate.
 // Diagnostics run in Update.
@@ -17,7 +16,8 @@ pub use components::{
     CasimirFieldConfig, CasimirParams, CasimirPlate, EntangledPair, PlateGeometry,
     QuantumDiagnostics, QuantumDomain, QuantumParams, SpinLattice,
 };
-pub use resources::{QuantumConfig, QuantumEngine, QuantumInstance};
+pub use gororoba_kernel_quantum::QuantumConfig;
+pub use resources::{QuantumEngine, QuantumInstance};
 
 pub struct QuantumPlugin;
 

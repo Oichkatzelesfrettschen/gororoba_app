@@ -1,21 +1,15 @@
-// CdAlgebraEngine resource wrapping cd_kernel and algebra_core.
+// CdAlgebraEngine resource wrapping gororoba_app's local algebra kernel.
 //
 // Manages hypercomplex algebra computations and zero-divisor search
 // results as a Bevy resource.
 
 use bevy::prelude::*;
-
-use algebra_core::construction::hypercomplex::{
-    HypercomplexAlgebra, ZeroDivisorResults, ZeroSearchConfig,
-};
-use cd_kernel::cayley_dickson::{cd_associator_norm, cd_multiply, cd_norm_sq};
+use gororoba_kernel_algebra::CayleyDicksonKernel;
+use gororoba_kernel_api::algebra::{AlgebraKernel, ZeroDivisorPair, ZeroDivisorSearchConfig};
 
 use crate::components::AlgebraDimension;
 
 /// CPU-based Cayley-Dickson algebra engine.
-///
-/// Wraps algebra_core's HypercomplexAlgebra for zero-divisor searches
-/// and cd_kernel for element multiplication and associator computation.
 #[derive(Resource, Default)]
 pub struct CdAlgebraEngine {
     /// Active algebra instances keyed by entity ID.
@@ -24,10 +18,10 @@ pub struct CdAlgebraEngine {
 
 /// Per-entity algebra state.
 pub struct AlgebraInstance {
-    /// The algebra wrapper from algebra_core.
-    pub algebra: HypercomplexAlgebra,
+    /// Local Cayley-Dickson kernel used by the game engine.
+    pub kernel: CayleyDicksonKernel,
     /// Cached zero-divisor search results.
-    pub zd_results: Option<ZeroDivisorResults>,
+    pub zd_results: Vec<ZeroDivisorPair>,
     /// Algebra dimension.
     pub dim: usize,
 }
@@ -47,12 +41,11 @@ impl CdAlgebraEngine {
         self.instances.retain(|(e, _)| *e != entity);
 
         let dim = config.dimension.dim();
-        let algebra = HypercomplexAlgebra::new(dim);
         self.instances.push((
             entity,
             AlgebraInstance {
-                algebra,
-                zd_results: None,
+                kernel: CayleyDicksonKernel::new(config.dimension),
+                zd_results: Vec::new(),
                 dim,
             },
         ));
@@ -82,15 +75,15 @@ impl CdAlgebraEngine {
 
 impl AlgebraInstance {
     /// Run zero-divisor search and cache results.
-    pub fn search_zero_divisors(&mut self, config: &ZeroSearchConfig) {
-        self.zd_results = Some(self.algebra.find_zero_divisors(config));
+    pub fn search_zero_divisors(&mut self, config: &ZeroDivisorSearchConfig) {
+        self.zd_results = self.kernel.search_zero_divisors(config);
     }
 
     /// Multiply two hypercomplex elements.
     pub fn multiply(&self, a: &[f64], b: &[f64]) -> Vec<f64> {
         assert_eq!(a.len(), self.dim);
         assert_eq!(b.len(), self.dim);
-        cd_multiply(a, b)
+        self.kernel.multiply(a, b)
     }
 
     /// Compute the associator norm |[a, b, c]| = |(ab)c - a(bc)|.
@@ -98,29 +91,22 @@ impl AlgebraInstance {
         assert_eq!(a.len(), self.dim);
         assert_eq!(b.len(), self.dim);
         assert_eq!(c.len(), self.dim);
-        cd_associator_norm(a, b, c)
+        self.kernel.associator_norm(a, b, c)
     }
 
     /// Compute the norm squared of an element.
     pub fn norm_sq(&self, a: &[f64]) -> f64 {
-        cd_norm_sq(a)
+        self.kernel.norm_sq(a)
     }
 
     /// Count of 2-blade zero-divisors found.
     pub fn zd_count_2blade(&self) -> usize {
-        self.zd_results
-            .as_ref()
-            .map(|r| r.blade2.len())
-            .unwrap_or(0)
+        self.zd_results.len()
     }
 
     /// Count of 3-blade zero-divisors found (if searched).
     pub fn zd_count_3blade(&self) -> usize {
-        self.zd_results
-            .as_ref()
-            .and_then(|r| r.blade3.as_ref())
-            .map(|b| b.len())
-            .unwrap_or(0)
+        0
     }
 }
 
@@ -199,12 +185,9 @@ mod tests {
         engine.create_instance(entity, &test_config(AlgebraDimension::Sedenion));
 
         let inst = engine.get_mut(entity).unwrap();
-        let search_config = ZeroSearchConfig {
+        let search_config = ZeroDivisorSearchConfig {
             tolerance: 1e-12,
-            parallel: false,
-            max_blade_order: 2,
-            n_samples: 0,
-            seed: 42,
+            max_results: 64,
         };
         inst.search_zero_divisors(&search_config);
         // Sedenions (dim 16) must have zero-divisors

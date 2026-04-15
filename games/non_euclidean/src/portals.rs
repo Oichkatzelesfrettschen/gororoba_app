@@ -8,6 +8,9 @@
 use bevy::prelude::*;
 
 use gororoba_bevy_algebra::ZeroDivisorPortal;
+use gororoba_kernel_algebra::{project_coeffs, zero_divisor_signature};
+use gororoba_kernel_api::algebra::ZeroDivisorPair;
+use gororoba_kernel_api::projection::ProjectionSpec;
 
 use crate::rooms::{ActiveRoom, Room, RoomLayout};
 use crate::states::PuzzleSimState;
@@ -36,13 +39,15 @@ pub struct PortalsPlugin;
 
 impl Plugin for PortalsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<PortalTraversalCount>()
-            .add_systems(OnEnter(PuzzleSimState::Exploring), spawn_portal_visuals)
-            .add_systems(
-                Update,
-                (portal_gizmo_system, portal_traverse_system)
-                    .run_if(in_state(PuzzleSimState::Exploring)),
-            );
+        app.init_resource::<PortalTraversalCount>().add_systems(
+            Update,
+            (
+                spawn_portal_visuals,
+                portal_gizmo_system,
+                portal_traverse_system,
+            )
+                .run_if(in_state(PuzzleSimState::Exploring)),
+        );
     }
 }
 
@@ -52,7 +57,7 @@ impl Plugin for PortalsPlugin {
 /// The room mapping uses modular arithmetic over the basis indices.
 fn spawn_portal_visuals(
     mut commands: Commands,
-    zd_portals: Query<&ZeroDivisorPortal>,
+    zd_portals: Query<&ZeroDivisorPortal, Added<ZeroDivisorPortal>>,
     rooms: Query<&Room>,
     layout: Res<RoomLayout>,
 ) {
@@ -91,7 +96,18 @@ fn spawn_portal_visuals(
             .map(|r| r.center)
             .unwrap_or(Vec3::ZERO);
 
-        let position = (from_center + to_center) * 0.5 + Vec3::Y * (idx as f32 * 0.5);
+        let pair = ZeroDivisorPair {
+            lhs_indices: portal.a_indices,
+            rhs_indices: portal.b_indices,
+            rhs_sign: portal.rhs_sign,
+            product_norm: portal.product_norm,
+        };
+        let signature = zero_divisor_signature(layout.dimension.dim(), &pair);
+        let projection = project_coeffs(&signature, &ProjectionSpec::default()).scaled(2.5);
+        let midpoint = (from_center + to_center) * 0.5;
+        let algebra_offset =
+            Vec3::new(projection.x, projection.y, projection.z).normalize_or_zero() * 2.0;
+        let position = midpoint + algebra_offset + Vec3::Y * (0.5 + idx as f32 * 0.25);
 
         commands.spawn(PortalVisual {
             from_room,

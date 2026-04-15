@@ -1,113 +1,107 @@
 # gororoba_app
 
-Rust SSR frontend workspace for the Gororoba experiment ecosystem.
+Rust workspace for the Gororoba engine microcosm.
+
+`gororoba_app` is no longer just an SSR frontend shell. It is a mixed workspace
+with:
+
+- self-contained local engine/kernel crates inside this repository
+- Bevy game/plugin crates that turn those kernels into playable 3D systems
+- operator and teaching apps that expose selected simulations and workflows
+
+`open_gororoba` remains the reference physics/math kernel for research,
+discovery, and parity checks. The direction for this repository is one-way:
+study upstream, then implement the game-facing runtime locally here. Today,
+that transition has started with the local algebra kernel used by
+`non_euclidean`.
 
 ## Workspace layout
 
-- `Cargo.toml`: root workspace manifest and dependency policy.
-- `apps/studio_web`: full-featured SSR app (Axum + Askama + typed backend client).
-- `apps/physics_sandbox`: visual simulation + benchmark app prototype.
-- `apps/synthesis_arena`: game-like optimization lab with benchmarkable scoring.
-- `crates/gororoba_shared_core`: Rust-first shared domain and learning core.
-- `tools/xtask`: reproducible packaging and contract automation lane.
-- `apps/mobile_spike`: Android/iOS architecture spike docs and contracts.
-- `docs/CROSS_REPO_INTERFACE_POLICY.md`: frontend/backend boundary rules.
-- `docs/OPEN_GOROROBA_BACKEND_ALIGNMENT_HANDOFF.md`: cross-repo API/artifact sync checklist.
-- `docs/DEPENDENCY_REFERENCE.md`: verified crate versions and API/manual links.
-- `docs/DESKTOP_PACKAGING_LANE.md`: packaging lane documentation.
-- `docs/APP_PURPOSE_AND_AUDIENCES.md`: mission, personas, and depth model.
-- `REQUIREMENTS.md`: reproducible installation/build/test requirements.
-- `plans/CROSS_REPO_EXECUTION_STRATEGY_2026_02_13.toml`: cross-repo coordination strategy.
+- `Cargo.toml`: root workspace manifest and dependency policy
+- `crates/gororoba_kernel_api`: local engine-facing Rust traits and snapshot types
+- `crates/gororoba_kernel_algebra`: local Cayley-Dickson algebra kernel
+- `crates/gororoba_kernel_fluid`: local CPU fluid kernels and shared factory
+- `crates/gororoba_kernel_fluid_vulkan`: local Vulkan capability/probe lane
+- `crates/gororoba_kernel_fluid_cuda`: local CUDA capability/probe lane
+- `crates/gororoba_bevy_core`: shared Bevy camera, HUD, pedagogy, and state
+- `crates/gororoba_bevy_algebra`: Bevy algebra bridge using the local kernel
+- `crates/gororoba_bevy_lbm`: fluid gameplay bridge with a local SoA kernel path
+- `crates/gororoba_bevy_gr`: relativity gameplay bridge on local contracts
+- `crates/gororoba_bevy_quantum`: quantum gameplay bridge on local contracts
+- `games/fluid_dynamics`: Bevy fluid game
+- `games/non_euclidean`: Bevy non-Euclidean algebra game
+- `games/relativistic_space`: Bevy relativity game
+- `games/quantum_builder`: Bevy quantum sandbox
+- `games/interaction_arena`: strategy/game-semantics game
+- `apps/studio_web`: SSR operator app
+- `apps/physics_sandbox`: simulation app
+- `apps/synthesis_arena`: scoring/teaching app
+- `tools/xtask`: reproducible utility lane
+- `docs/GAME_ARCHITECTURE.md`: current engine architecture
+- `REQUIREMENTS.md`: root reproducible build requirements
+- `docs/requirements/algebra.md`: module-specific requirements for the local algebra lane
 
-## Studio app
+## Current boundary
 
-`gororoba_studio_web` provides:
-
-1. Dashboard view of available thesis pipelines.
-2. Run, benchmark, and reproducibility actions for each pipeline.
-3. API-version-aware rendering against backend contract `studio.v1`.
-4. Asset-backed responsive UI (desktop + mobile) with Rust SSR templates.
-5. Offline integration tests using a local mock backend router.
-6. In-memory dashboard cache with mutation invalidation and configurable TTL.
-7. Three layered pedagogy modes:
-   - Story (7th grade)
-   - Explorer (curious adult)
-   - Research (equations, walkthroughs, assumptions, proof sketch, artifact links)
-8. Visual-lab canvas overlays for history metrics, oscillator intuition, and phase-space behavior.
-
-## Physics sandbox app
-
-`physics_sandbox` provides:
-
-1. Deterministic oscillator simulation API (`POST /api/simulate`).
-2. Benchmark API (`POST /api/benchmark`) with stability and timing metrics.
-3. Interactive visual page for controls + charting.
-4. Story/Explorer/Research learning layers in one UI.
-5. Time-series and phase-space visual plots for analysis.
-6. Offline deterministic tests for simulation and API flows.
-
-Default URL after launch: `http://127.0.0.1:8093`.
-
-## Synthesis arena app
-
-`synthesis_arena` provides:
-
-1. Challenge catalog API (`GET /api/challenges`).
-2. Deterministic scoring API (`POST /api/evaluate`) with 4 metric gates.
-3. Benchmark API (`POST /api/benchmark`) with timing and score statistics.
-4. Story/Explorer/Research learning layers in the UI.
-5. Visual scoreboard chart for metric values versus gate thresholds.
-
-Default URL after launch: `http://127.0.0.1:8094`.
+- `gororoba_app` owns gameplay runtime, Bevy integration, and local engine APIs.
+- `open_gororoba` is used as a reference kernel, discovery backend, and future
+  upstream target for novel findings.
+- Runtime mirroring is being removed domain by domain, not all at once.
+- Algebra is the first fully local gameplay kernel slice here.
+- Fluid now has a fully local CPU runtime with scalar and SoA kernels plus
+  local Vulkan/CUDA backend objects selected through a shared
+  backend/capability contract.
+- GR and quantum now route gameplay through local kernel APIs even though their
+  current CPU implementations still reuse upstream internals.
 
 ## Quick start
+
+Run the non-Euclidean game:
+
+```bash
+cargo run -p non_euclidean
+```
+
+Run the operator app:
 
 ```bash
 cargo run -p gororoba_studio_web
 ```
 
-Then open `http://127.0.0.1:8090`.
-
-If your backend runs elsewhere:
+Other entry points:
 
 ```bash
-GOROROBA_BACKEND_URL=http://127.0.0.1:8088 cargo run -p gororoba_studio_web
-```
-
-Adjust frontend cache TTL (milliseconds):
-
-```bash
-GOROROBA_UI_CACHE_TTL_MS=1500 cargo run -p gororoba_studio_web
-```
-
-Run physics sandbox:
-
-```bash
+cargo run -p fluid_dynamics
+cargo run -p relativistic_space
+cargo run -p quantum_builder
+cargo run -p interaction_arena
 cargo run -p physics_sandbox
-```
-
-Run synthesis arena:
-
-```bash
 cargo run -p synthesis_arena
-```
-
-Generate mobile contract artifact:
-
-```bash
-scripts/generate_mobile_contract.sh
-```
-
-Build desktop packaging matrix:
-
-```bash
-scripts/package_desktop_matrix.sh
 ```
 
 ## Quality gates
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace --all-targets
+scripts/cargo-isolated.sh fmt --all --check
+scripts/cargo-isolated.sh clippy --workspace --all-targets -- -D warnings
+scripts/cargo-isolated.sh test --workspace --all-targets --locked
+scripts/cargo-isolated.sh check --workspace --all-targets --locked
 ```
+
+## Current status
+
+- Local kernel extraction now includes `gororoba_kernel_api`,
+  `gororoba_kernel_algebra`, `gororoba_kernel_fluid`,
+  `gororoba_kernel_fluid_vulkan`, and `gororoba_kernel_fluid_cuda`.
+- `gororoba_bevy_algebra` and `games/non_euclidean` now use the local algebra
+  kernel path.
+- `gororoba_bevy_gr` and `gororoba_bevy_quantum` now consume local kernel
+  contracts instead of upstream-facing game resources.
+- Bevy is pinned to an explicit feature set so the workspace no longer pulls
+  audio, glTF, or picking by default.
+- CUDA and Vulkan fluid lanes are feature-gated so default builds stay on the
+  fast CPU path.
+- Cargo builds are isolated per project via repo-local `CARGO_HOME` and
+  `target-gororoba_app` when using `scripts/cargo-isolated.sh`.
+- The isolated Cargo wrapper defaults build/test/Rayon thread counts to half of
+  detected CPUs unless you override them with environment variables.

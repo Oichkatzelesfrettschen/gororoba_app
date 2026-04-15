@@ -1,6 +1,6 @@
 // General relativity as a Bevy plugin.
 //
-// Wraps open_gororoba's gr_core and cosmology_core for geodesic
+// Uses gororoba_app's local relativity kernel boundary for geodesic
 // integration, gravitational lensing, and time dilation.
 //
 // Geodesic integration runs in FixedUpdate (deterministic physics).
@@ -16,7 +16,8 @@ pub use components::{
     AccretionDisk, BlackHole, Geodesic, GeodesicType, GrDiagnostics, GrParams, MetricType,
     SpacetimeDomain,
 };
-pub use resources::{GrConfig, GrEngine, GrInstance};
+pub use gororoba_kernel_gr::GrConfig;
+pub use resources::{GrEngine, GrInstance};
 
 pub struct GrPlugin;
 

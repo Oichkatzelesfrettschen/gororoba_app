@@ -368,11 +368,10 @@ fn velocity_gizmo_system(
                             z as f32 - grid.nz as f32 / 2.0,
                         );
 
-                        let dir = Vec3::new(u[0] as f32, u[1] as f32, u[2] as f32).normalize()
-                            * (speed as f32 * 50.0).min(2.0);
+                        let dir = Vec3::new(u[0], u[1], u[2]).normalize() * (speed * 50.0).min(2.0);
 
                         // Color: blue (slow) -> red (fast).
-                        let t = (speed as f32 / 0.1).clamp(0.0, 1.0);
+                        let t = (speed / 0.1).clamp(0.0, 1.0);
                         let color = Color::srgb(t, 0.2, 1.0 - t);
 
                         gizmos.line(pos, pos + dir, color);

@@ -6,8 +6,7 @@
 // diagnostics_system updates diagnostic components (Update).
 
 use bevy::prelude::*;
-
-use algebra_core::construction::hypercomplex::ZeroSearchConfig;
+use gororoba_kernel_api::algebra::ZeroDivisorSearchConfig;
 
 use crate::components::{
     AlgebraDiagnostics, AlgebraDomain, AlgebraParams, HypercomplexElement, ZeroDivisorPortal,
@@ -43,12 +42,9 @@ pub fn zd_search_system(
 ) {
     for (entity, params) in &query {
         if let Some(inst) = engine.get_mut(entity) {
-            let search_config = ZeroSearchConfig {
+            let search_config = ZeroDivisorSearchConfig {
                 tolerance: params.zero_tolerance,
-                parallel: params.parallel_search,
-                max_blade_order: params.max_blade_order,
-                n_samples: 0,
-                seed: params.seed,
+                max_results: params.max_blade_order.max(1) * 32,
             };
             inst.search_zero_divisors(&search_config);
         }
@@ -66,15 +62,14 @@ pub fn portal_spawn_system(
     mut commands: Commands,
 ) {
     for (entity, _params) in &query {
-        if let Some(inst) = engine.get(entity)
-            && let Some(ref results) = inst.zd_results
-        {
-            for &(i, j, k, l, norm) in &results.blade2 {
+        if let Some(inst) = engine.get(entity) {
+            for pair in &inst.zd_results {
                 commands.spawn((
                     ZeroDivisorPortal {
-                        a_indices: (i, j),
-                        b_indices: (k, l),
-                        product_norm: norm,
+                        a_indices: pair.lhs_indices,
+                        b_indices: pair.rhs_indices,
+                        rhs_sign: pair.rhs_sign,
+                        product_norm: pair.product_norm,
                         active: true,
                     },
                     ChildOf(entity),
@@ -168,12 +163,9 @@ mod tests {
         engine.create_instance(entity, &test_config());
 
         let inst = engine.get_mut(entity).unwrap();
-        let search_config = ZeroSearchConfig {
+        let search_config = ZeroDivisorSearchConfig {
             tolerance: 1e-12,
-            parallel: false,
-            max_blade_order: 2,
-            n_samples: 0,
-            seed: 42,
+            max_results: 64,
         };
         inst.search_zero_divisors(&search_config);
 

@@ -4,37 +4,11 @@
 
 use bevy::prelude::*;
 
+pub use gororoba_kernel_api::algebra::AlgebraDimension;
+
 /// Marker component for entities in a hypercomplex algebra domain.
 #[derive(Component, Default)]
 pub struct AlgebraDomain;
-
-/// Dimension of the Cayley-Dickson algebra to use.
-///
-/// Mirrors algebra_core::AlgebraDim but as a Bevy-friendly component field.
-/// Only dimensions >= 16 (sedenions) have zero-divisors.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum AlgebraDimension {
-    /// Quaternions (dim 4) -- associative, no zero-divisors.
-    Quaternion,
-    /// Octonions (dim 8) -- non-associative, no zero-divisors.
-    Octonion,
-    /// Sedenions (dim 16) -- first algebra with zero-divisors.
-    #[default]
-    Sedenion,
-    /// 32-ions (dim 32) -- richer zero-divisor structure.
-    Dim32,
-}
-
-impl AlgebraDimension {
-    pub fn dim(self) -> usize {
-        match self {
-            Self::Quaternion => 4,
-            Self::Octonion => 8,
-            Self::Sedenion => 16,
-            Self::Dim32 => 32,
-        }
-    }
-}
 
 /// Configuration for the algebra simulation domain.
 #[derive(Component)]
@@ -112,6 +86,8 @@ pub struct ZeroDivisorPortal {
     pub a_indices: (usize, usize),
     /// Second element of the zero-divisor pair (basis indices).
     pub b_indices: (usize, usize),
+    /// Sign of the second blade's second basis term.
+    pub rhs_sign: i8,
     /// Product norm (how close to zero; 0.0 = exact zero-divisor).
     pub product_norm: f64,
     /// Whether this portal is currently active (traversable).

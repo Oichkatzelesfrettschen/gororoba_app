@@ -1,0 +1,11 @@
+[package]
+name = "gororoba_kernel_fluid"
+version.workspace = true
+edition.workspace = true
+license = "GPL-2.0-only"
+publish = false
+description = "Local fluid kernel and SoA LBM implementation for gororoba_app"
+
+[dependencies]
+gororoba_kernel_api = { path = "../gororoba_kernel_api" }
+rayon.workspace = true

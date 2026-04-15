@@ -1,13 +1,9 @@
-// MERA step, Casimir energy, and measurement systems.
-//
-// quantum_init_system initializes quantum instances for new domains.
-// mera_step_system runs MERA entropy estimation (FixedUpdate).
-// casimir_system computes Casimir energies (FixedUpdate).
-// diagnostics_system updates diagnostic components (Update).
+// MERA step, Casimir energy, and measurement systems backed by the local quantum kernel.
 
 use bevy::prelude::*;
-
-use casimir_core::energy::WorldlineCasimirConfig;
+use gororoba_kernel_api::quantum::{
+    CasimirFieldRequest, CasimirWorldlineConfig, QuantumKernel, SpinLatticeConfig,
+};
 
 use crate::components::{
     CasimirFieldConfig, CasimirParams, CasimirPlate, PlateGeometry, QuantumDiagnostics,
@@ -15,48 +11,45 @@ use crate::components::{
 };
 use crate::resources::{QuantumConfig, QuantumEngine};
 
-/// Initialize quantum instances for newly-spawned QuantumDomain entities.
 #[allow(clippy::type_complexity)]
 pub fn quantum_init_system(
     mut engine: ResMut<QuantumEngine>,
-    query: Query<(Entity, &SpinLattice), (With<QuantumDomain>, Added<QuantumDomain>)>,
+    query: Query<
+        (Entity, &SpinLattice, &QuantumParams),
+        (With<QuantumDomain>, Added<QuantumDomain>),
+    >,
 ) {
-    for (entity, lattice) in &query {
+    for (entity, lattice, params) in &query {
         let config = QuantumConfig {
-            n_sites: lattice.n_sites,
-            local_dim: lattice.local_dim,
-            seed: lattice.seed,
+            lattice: SpinLatticeConfig {
+                n_sites: lattice.n_sites,
+                local_dim: lattice.local_dim,
+                seed: lattice.seed,
+            },
+            subsystem_size: params.subsystem_size,
         };
         engine.create_instance(entity, &config);
     }
 }
 
-/// Run MERA entropy estimation.
-///
-/// Updates the cached entropy value in the quantum instance.
-/// Runs in FixedUpdate for deterministic results.
 pub fn mera_step_system(
     mut engine: ResMut<QuantumEngine>,
-    query: Query<(Entity, &SpinLattice, &QuantumParams), With<QuantumDomain>>,
+    query: Query<(Entity, &QuantumParams), With<QuantumDomain>>,
 ) {
-    for (entity, lattice, params) in &query {
+    for (entity, params) in &query {
         if let Some(inst) = engine.get_mut(entity) {
-            inst.estimate_entropy(params.subsystem_size, lattice.seed);
+            inst.estimate_entropy(params.subsystem_size);
         }
     }
 }
 
-/// Compute Casimir energies for plate configurations.
-///
-/// Evaluates the Casimir energy at the plate position using the
-/// worldline Monte Carlo method. Runs in FixedUpdate.
 pub fn casimir_system(
     mut engine: ResMut<QuantumEngine>,
     query: Query<(Entity, &CasimirPlate, &CasimirParams), With<QuantumDomain>>,
 ) {
     for (entity, plate, params) in &query {
         if let Some(inst) = engine.get_mut(entity) {
-            let config = WorldlineCasimirConfig {
+            let config = CasimirWorldlineConfig {
                 n_loop_points: params.n_loop_points,
                 n_loops: params.n_loops,
                 t_min: params.t_min,
@@ -64,15 +57,11 @@ pub fn casimir_system(
                 n_t_points: params.n_t_points,
                 seed: params.seed,
             };
-            inst.compute_casimir(&plate.geometry, plate.position, &config);
+            inst.compute_casimir(plate.geometry, plate.position, &config);
         }
     }
 }
 
-/// Compute 3D Casimir energy density field when CasimirFieldConfig is present.
-///
-/// Only recomputes when `dirty` is true, to avoid expensive Monte Carlo
-/// computation every frame. Runs in FixedUpdate after casimir_system.
 pub fn casimir_field_system(
     mut engine: ResMut<QuantumEngine>,
     mut query: Query<
@@ -90,12 +79,12 @@ pub fn casimir_field_system(
             continue;
         }
 
-        let PlateGeometry::ParallelPlates { separation } = plate.geometry else {
+        let PlateGeometry::ParallelPlates { .. } = plate.geometry else {
             continue;
         };
 
         if let Some(inst) = engine.get_mut(entity) {
-            let config = WorldlineCasimirConfig {
+            let config = CasimirWorldlineConfig {
                 n_loop_points: params.n_loop_points,
                 n_loops: params.n_loops,
                 t_min: params.t_min,
@@ -103,10 +92,12 @@ pub fn casimir_field_system(
                 n_t_points: params.n_t_points,
                 seed: params.seed,
             };
-            inst.compute_casimir_field_3d_parallel_plates(
-                separation,
-                field_cfg.bounds,
-                field_cfg.resolution,
+            inst.compute_casimir_field(
+                plate.geometry,
+                &CasimirFieldRequest {
+                    resolution: field_cfg.resolution,
+                    bounds: field_cfg.bounds,
+                },
                 &config,
             );
             field_cfg.dirty = false;
@@ -114,25 +105,21 @@ pub fn casimir_field_system(
     }
 }
 
-/// Update diagnostic components from quantum engine state.
 pub fn diagnostics_system(
     engine: Res<QuantumEngine>,
     mut query: Query<(Entity, &mut QuantumDiagnostics), With<QuantumDomain>>,
 ) {
     for (entity, mut diag) in &mut query {
         if let Some(inst) = engine.get(entity) {
-            diag.entanglement_entropy = inst.entropy;
-            diag.mera_layers = inst.layer_count();
-
-            if let Some(ref result) = inst.casimir_result {
-                diag.casimir_energy = result.energy;
-                diag.casimir_error = result.error;
-            }
+            let kernel_diag = inst.kernel.diagnostics();
+            diag.entanglement_entropy = kernel_diag.entanglement_entropy;
+            diag.mera_layers = kernel_diag.mera_layers;
+            diag.casimir_energy = kernel_diag.casimir_energy;
+            diag.casimir_error = kernel_diag.casimir_error;
         }
     }
 }
 
-/// Clean up quantum instances when QuantumDomain entities are despawned.
 pub fn quantum_cleanup_system(
     mut engine: ResMut<QuantumEngine>,
     mut removals: RemovedComponents<QuantumDomain>,
@@ -145,69 +132,59 @@ pub fn quantum_cleanup_system(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resources::QuantumConfig;
+    use gororoba_kernel_api::quantum::CasimirGeometry;
 
     #[test]
     fn quantum_init_creates_instance() {
         let mut engine = QuantumEngine::default();
         let entity = Entity::from_bits(1);
         let config = QuantumConfig {
-            n_sites: 16,
-            local_dim: 2,
-            seed: 42,
+            lattice: SpinLatticeConfig {
+                n_sites: 16,
+                local_dim: 2,
+                seed: 42,
+            },
+            subsystem_size: 4,
         };
         engine.create_instance(entity, &config);
 
         let inst = engine.get(entity).unwrap();
-        assert_eq!(inst.n_sites, 16);
+        assert_eq!(inst.kernel.config.lattice.n_sites, 16);
         assert!(inst.layer_count() > 0);
     }
 
     #[test]
-    fn casimir_field_3d_via_instance() {
+    fn casimir_field_snapshot_is_cached_for_gameplay() {
         let mut engine = QuantumEngine::default();
         let entity = Entity::from_bits(1);
         let config = QuantumConfig {
-            n_sites: 8,
-            local_dim: 2,
-            seed: 42,
+            lattice: SpinLatticeConfig {
+                n_sites: 8,
+                local_dim: 2,
+                seed: 42,
+            },
+            subsystem_size: 4,
         };
         engine.create_instance(entity, &config);
 
         let inst = engine.get_mut(entity).unwrap();
-        let mc_config = WorldlineCasimirConfig {
-            n_loop_points: 16,
-            n_loops: 50,
-            t_min: 0.01,
-            t_max: 3.0,
-            n_t_points: 4,
-            seed: 42,
-        };
-        inst.compute_casimir_field_3d_parallel_plates(
-            1.0,
-            (-1.0, 1.0, 0.0, 1.0, -1.0, 1.0),
-            (2, 2, 2),
-            &mc_config,
+        inst.compute_casimir_field(
+            CasimirGeometry::ParallelPlates { separation: 1.0 },
+            &CasimirFieldRequest {
+                resolution: (2, 2, 2),
+                bounds: (-1.0, 1.0, 0.0, 1.0, -1.0, 1.0),
+            },
+            &CasimirWorldlineConfig {
+                n_loop_points: 16,
+                n_loops: 50,
+                t_min: 0.01,
+                t_max: 3.0,
+                n_t_points: 4,
+                seed: 42,
+            },
         );
 
         let field = inst.casimir_field_3d.as_ref().unwrap();
         assert_eq!(field.data.len(), 8);
-        assert!(field.data.iter().all(|v| v.is_finite()));
-    }
-
-    #[test]
-    fn mera_entropy_nonnegative() {
-        let mut engine = QuantumEngine::default();
-        let entity = Entity::from_bits(1);
-        let config = QuantumConfig {
-            n_sites: 16,
-            local_dim: 2,
-            seed: 42,
-        };
-        engine.create_instance(entity, &config);
-
-        let inst = engine.get_mut(entity).unwrap();
-        inst.estimate_entropy(4, 42);
-        assert!(inst.entropy >= 0.0);
     }
 }

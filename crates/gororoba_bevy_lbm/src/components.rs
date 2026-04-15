@@ -3,6 +3,7 @@
 // These define the ECS data model for LBM simulations in Bevy.
 
 use bevy::prelude::*;
+use gororoba_kernel_api::fluid::FluidExecutionConfig;
 
 /// A 3D voxel grid used for hull/obstacle definition.
 ///
@@ -100,8 +101,8 @@ pub struct SimulationParams {
     pub force: [f64; 3],
     /// Steps per FixedUpdate tick. Higher = faster simulation, more CPU.
     pub substeps: usize,
-    /// Use high-performance SoA f32 solver (perturbation formulation).
-    pub use_soa: bool,
+    /// Backend preference and CPU flavor selection.
+    pub execution: FluidExecutionConfig,
 }
 
 impl Default for SimulationParams {
@@ -112,7 +113,7 @@ impl Default for SimulationParams {
             u_init: [0.0, 0.0, 0.0],
             force: [0.0, 0.0, 0.0],
             substeps: 1,
-            use_soa: false,
+            execution: FluidExecutionConfig::default(),
         }
     }
 }

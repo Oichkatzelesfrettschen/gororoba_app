@@ -8,6 +8,5 @@ description = "Cayley-Dickson algebra as a Bevy plugin"
 
 [dependencies]
 bevy.workspace = true
-gororoba_bevy_core = { path = "../gororoba_bevy_core" }
-cd_kernel.workspace = true
-algebra_core.workspace = true
+gororoba_kernel_api = { path = "../gororoba_kernel_api" }
+gororoba_kernel_algebra = { path = "../gororoba_kernel_algebra" }

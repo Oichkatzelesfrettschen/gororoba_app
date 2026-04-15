@@ -1,71 +1,88 @@
-# Gororoba Games Platform -- Architecture
+# Gororoba Engine Architecture
 
 ## Overview
 
-Four physics games built on Bevy 0.18, wrapping open_gororoba's physics
-crates as Bevy plugins. Each game pairs a shared infrastructure layer
-(gororoba_bevy_core) with a domain-specific physics plugin.
+`gororoba_app` is a self-contained Rust game-engine microcosm that is being
+built out domain by domain. The repository contains both gameplay code and the
+local engine/kernel interfaces that those games depend on.
 
-## Repo Layout
+`open_gororoba` is the reference kernel for research, discovery, and parity
+validation. It is not the desired steady-state runtime dependency for game
+features here.
 
-```
+## Current architecture
+
+```text
 gororoba_app/
   crates/
-    gororoba_bevy_core/     Shared: camera, HUD, pedagogy, input, GameState
-    gororoba_bevy_lbm/      LBM fluid dynamics (wraps lbm_vulkan, lbm_3d)
-    gororoba_bevy_algebra/  Cayley-Dickson algebra (wraps cd_kernel, algebra_core)
-    gororoba_bevy_gr/       General relativity (wraps gr_core, cosmology_core)
-    gororoba_bevy_quantum/  Quantum/Casimir (wraps quantum_core, casimir_core)
+    gororoba_kernel_api/       Stable engine-facing traits and snapshot types
+    gororoba_kernel_algebra/   Local Cayley-Dickson kernel
+    gororoba_kernel_fluid/     Local CPU fluid kernels and backend factory
+    gororoba_kernel_fluid_vulkan/ Local Vulkan capability/probe lane
+    gororoba_kernel_fluid_cuda/ Local CUDA capability/probe lane
+    gororoba_bevy_core/        Shared Bevy camera, HUD, states, pedagogy
+    gororoba_bevy_algebra/     Bevy algebra systems using local kernel crates
+    gororoba_bevy_lbm/         Fluid bridge on local fluid APIs
+    gororoba_bevy_gr/          Relativity bridge on local contracts
+    gororoba_bevy_quantum/     Quantum bridge on local contracts
+    gororoba_bevy_game_semantics/ Shared gameplay semantics
   games/
-    fluid_dynamics/         Game 1: vehicle design + wind tunnel (LBM)
-    non_euclidean/          Game 2: non-Euclidean puzzle (CD algebra)
-    relativistic_space/     Game 3: black hole exploration (GR)
-    quantum_builder/        Game 4: nanoscale sandbox (quantum)
+    fluid_dynamics/
+    non_euclidean/
+    relativistic_space/
+    quantum_builder/
+    interaction_arena/
+  apps/
+    studio_web/
+    physics_sandbox/
+    synthesis_arena/
 ```
 
-## Plugin Pattern
+## Boundary rules
 
-Each physics crate is wrapped as a Bevy `Plugin`:
+1. Local engine/gameplay APIs live in `gororoba_app`.
+2. Games should depend on local kernel traits and local Bevy bridge crates.
+3. `open_gororoba` is allowed as a reference source, parity oracle, and future
+   upstream destination for novel findings.
+4. Direct runtime dependence on `open_gororoba` should be retired slice by slice.
 
-- Resources wrap engine state (e.g., `LbmEngineResource` wraps `GororobaEngine`)
-- Components represent domain entities (e.g., `VoxelGrid`, `BlackHole`)
-- Systems run physics in `FixedUpdate` (deterministic, framerate-independent)
-- Readback and rendering systems run in `Update` (display refresh rate)
+## Algebra lane
 
-## Critical Invariant: FixedUpdate vs Update
+The first localized runtime lane is algebra:
 
-Physics simulation MUST run in `FixedUpdate` (default 64 Hz). Tying physics
-to `Update` causes explosions on fast monitors and stalls on slow ones.
+- `gororoba_kernel_api` defines stable algebra and projection types.
+- `gororoba_kernel_algebra` provides a self-contained Cayley-Dickson kernel.
+- `gororoba_bevy_algebra` wraps the local kernel for ECS use.
+- `games/non_euclidean` consumes that local path.
 
-## ash-to-Bevy Bridge (fluid_dynamics only)
+This lane now supports:
 
-The LBM game uses dual Vulkan instances:
-1. ash (lbm_vulkan) for LBM compute
-2. wgpu (Bevy) for presentation
+- local multiplication and associator evaluation
+- local zero-divisor search for dimensions >= 16
+- deterministic coefficient projection into 3D portal placement
 
-CPU readback bridge: `GororobaEngine::read_render_pixels()` copies RGBA from
-GPU to CPU, then uploads to a Bevy `Image` asset each frame. Acceptable at
-720p (~3.5 MB/frame). Games 2/3/4 run entirely in Bevy's wgpu pipeline.
+## Remaining migration lanes
 
-## Shader Translation (relativistic_space)
+These domains still need deeper local implementation work:
 
-Blackhole's GLSL shaders are translated to WGSL for Bevy's render pipeline.
-Source GLSL lives in ~/Github/Blackhole/shader/. LUT data (CSV) is loaded
-at runtime and converted to GPU textures.
+- fluid Vulkan/CUDA execution backends still need native stepping imported
+  beyond the current local hybrid backend objects
+- general relativity internals
+- quantum/Casimir internals
+- strategy/game-theory evaluation
 
-## Dependencies
+## Real-math gameplay constraints
 
-- Bevy 0.18.0, bevy_egui 0.39
-- open_gororoba crates via git deps with [patch] override for local dev
-- nalgebra 0.33 (matching open_gororoba's statrs 0.18 constraint)
+1. Simulation math belongs in kernel crates, not ad hoc game systems.
+2. Bevy systems should consume snapshots, diagnostics, and projected structures.
+3. Puzzle success criteria should be based on real invariants, not placeholder
+   heuristics.
+4. Higher-dimensional structures must be projected into 3D deterministically.
 
-## Implementation Phases
+## Quality policy
 
-0. Workspace setup and git init (this phase)
-1. gororoba_bevy_core (shared infrastructure)
-2. gororoba_bevy_lbm (LBM plugin)
-3. Game 1: Fluid Dynamics MVP
-4. gororoba_bevy_algebra (CD algebra plugin)
-5. Game 2: Non-Euclidean Puzzle MVP
-6. gororoba_bevy_gr + Game 3: Relativistic Space
-7. gororoba_bevy_quantum + Game 4: Quantum Builder
+1. Physics/math stepping belongs in `FixedUpdate` unless there is a strong reason
+   otherwise.
+2. Presentation and gizmo/HUD refresh belongs in `Update`.
+3. Clippy runs with `-D warnings`.
+4. Locked build/test commands are the expected steady-state verification path.

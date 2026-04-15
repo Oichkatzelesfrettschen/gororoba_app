@@ -4,6 +4,8 @@
 
 use bevy::prelude::*;
 
+pub use gororoba_kernel_api::quantum::CasimirGeometry as PlateGeometry;
+
 /// Marker component for entities in a quantum simulation domain.
 #[derive(Component, Default)]
 pub struct QuantumDomain;
@@ -38,24 +40,6 @@ pub struct EntangledPair {
     pub site_b: usize,
     /// Entanglement entropy between the pair.
     pub entropy: f64,
-}
-
-/// Geometry type for Casimir effect simulation.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum PlateGeometry {
-    /// Two infinite parallel plates separated by distance d.
-    ParallelPlates { separation: f64 },
-    /// Sphere-plate-sphere configuration.
-    SpherePlateSphere {
-        sphere_radius: f64,
-        plate_distance: f64,
-    },
-}
-
-impl Default for PlateGeometry {
-    fn default() -> Self {
-        Self::ParallelPlates { separation: 1.0 }
-    }
 }
 
 /// Casimir plate component for Casimir effect simulation.

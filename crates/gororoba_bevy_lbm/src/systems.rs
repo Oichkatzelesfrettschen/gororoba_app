@@ -6,7 +6,7 @@
 use bevy::prelude::*;
 
 use crate::components::{FluidDomain, SimulationDiagnostics, SimulationParams, VoxelGrid};
-use crate::resources::{LbmCpuEngine, SolverConfig};
+use crate::resources::{FluidSimulationEngine, SolverConfig};
 
 /// Initialize solvers for newly-spawned FluidDomain entities.
 ///
@@ -14,7 +14,7 @@ use crate::resources::{LbmCpuEngine, SolverConfig};
 /// creates the corresponding LbmSolver3D in the CPU engine.
 #[allow(clippy::type_complexity)]
 pub fn solver_init_system(
-    mut engine: ResMut<LbmCpuEngine>,
+    mut engine: ResMut<FluidSimulationEngine>,
     query: Query<(Entity, &VoxelGrid, &SimulationParams), (With<FluidDomain>, Added<FluidDomain>)>,
 ) {
     for (entity, voxels, params) in &query {
@@ -25,23 +25,18 @@ pub fn solver_init_system(
             tau: params.tau,
             rho_init: params.rho_init,
             u_init: params.u_init,
-            use_soa: params.use_soa,
+            force: params.force,
+            substeps: params.substeps,
+            execution: params.execution,
         };
-        engine.create_solver(entity, &config);
+        if let Err(error) = engine.create_solver(entity, &config) {
+            warn!("Failed to create fluid solver for {entity:?}: {error}");
+            continue;
+        }
 
         // Inject voxel boundaries after creation.
         if let Some(inst) = engine.get_mut(entity) {
             inst.inject_boundary_from_voxels(voxels);
-
-            // Apply external force field if nonzero.
-            let f = params.force;
-            if f[0].abs() > 1e-12 || f[1].abs() > 1e-12 || f[2].abs() > 1e-12 {
-                let n = voxels.nx * voxels.ny * voxels.nz;
-                let force_field = vec![f; n];
-                if let Err(e) = inst.solver.set_force_field(force_field) {
-                    warn!("Failed to set force field: {e}");
-                }
-            }
         }
     }
 }
@@ -52,7 +47,7 @@ pub fn solver_init_system(
 /// conditions after every streaming step, enforcing no-slip walls at
 /// solid cells. Runs in FixedUpdate to decouple physics from framerate.
 pub fn simulation_step_system(
-    mut engine: ResMut<LbmCpuEngine>,
+    mut engine: ResMut<FluidSimulationEngine>,
     query: Query<(Entity, &SimulationParams), With<FluidDomain>>,
 ) {
     for (entity, params) in &query {
@@ -66,24 +61,17 @@ pub fn simulation_step_system(
 ///
 /// Runs in Update for HUD display.
 pub fn diagnostics_system(
-    engine: Res<LbmCpuEngine>,
+    engine: Res<FluidSimulationEngine>,
     mut query: Query<(Entity, &mut SimulationDiagnostics), With<FluidDomain>>,
 ) {
     for (entity, mut diag) in &mut query {
         if let Some(inst) = engine.get(entity) {
-            if let Some(soa) = &inst.soa {
-                diag.timestep = soa.timestep;
-                diag.total_mass = soa.total_mass();
-                diag.max_velocity = soa.max_velocity();
-                diag.mean_velocity = soa.mean_velocity();
-                diag.stable = soa.is_stable();
-            } else {
-                diag.timestep = inst.solver.timestep;
-                diag.total_mass = inst.solver.total_mass();
-                diag.max_velocity = inst.solver.max_velocity();
-                diag.mean_velocity = inst.solver.mean_velocity();
-                diag.stable = inst.solver.is_stable();
-            }
+            let snapshot = inst.diagnostics();
+            diag.timestep = snapshot.timestep;
+            diag.total_mass = snapshot.total_mass;
+            diag.max_velocity = snapshot.max_velocity;
+            diag.mean_velocity = snapshot.mean_velocity;
+            diag.stable = snapshot.stable;
         }
     }
 }
@@ -91,7 +79,7 @@ pub fn diagnostics_system(
 /// Re-inject voxel boundaries when VoxelGrid changes.
 #[allow(clippy::type_complexity)]
 pub fn boundary_update_system(
-    mut engine: ResMut<LbmCpuEngine>,
+    mut engine: ResMut<FluidSimulationEngine>,
     query: Query<(Entity, &VoxelGrid), (With<FluidDomain>, Changed<VoxelGrid>)>,
 ) {
     for (entity, voxels) in &query {
@@ -103,7 +91,7 @@ pub fn boundary_update_system(
 
 /// Clean up solvers when FluidDomain entities are despawned.
 pub fn solver_cleanup_system(
-    mut engine: ResMut<LbmCpuEngine>,
+    mut engine: ResMut<FluidSimulationEngine>,
     mut removals: RemovedComponents<FluidDomain>,
 ) {
     for entity in removals.read() {
@@ -124,38 +112,47 @@ mod tests {
             tau: 0.8,
             rho_init: 1.0,
             u_init,
-            use_soa: false,
+            force: [0.0; 3],
+            substeps: 1,
+            execution: Default::default(),
         }
     }
 
     #[test]
     fn simulation_step_evolves() {
-        let mut engine = LbmCpuEngine::default();
+        let mut engine = FluidSimulationEngine::default();
         let entity = Entity::from_bits(1);
-        engine.create_solver(entity, &test_config(8, [0.01, 0.0, 0.0]));
+        engine
+            .create_solver(entity, &test_config(8, [0.01, 0.0, 0.0]))
+            .unwrap();
 
         let inst = engine.get_mut(entity).unwrap();
-        let t0 = inst.solver.timestep;
-        inst.solver.evolve(5);
-        assert_eq!(inst.solver.timestep, t0 + 5);
+        let t0 = inst.diagnostics().timestep;
+        inst.evolve_with_boundaries(5);
+        assert_eq!(inst.diagnostics().timestep, t0 + 5);
     }
 
     #[test]
     fn diagnostics_from_solver() {
-        let mut engine = LbmCpuEngine::default();
+        let mut engine = FluidSimulationEngine::default();
         let entity = Entity::from_bits(1);
-        engine.create_solver(entity, &test_config(8, [0.0; 3]));
+        engine
+            .create_solver(entity, &test_config(8, [0.0; 3]))
+            .unwrap();
 
         let inst = engine.get(entity).unwrap();
-        assert!(inst.solver.is_stable());
-        assert!(inst.solver.total_mass() > 0.0);
+        let diagnostics = inst.diagnostics();
+        assert!(diagnostics.stable);
+        assert!(diagnostics.total_mass > 0.0);
     }
 
     #[test]
     fn voxel_boundary_injection() {
-        let mut engine = LbmCpuEngine::default();
+        let mut engine = FluidSimulationEngine::default();
         let entity = Entity::from_bits(1);
-        engine.create_solver(entity, &test_config(8, [0.0; 3]));
+        engine
+            .create_solver(entity, &test_config(8, [0.0; 3]))
+            .unwrap();
 
         let mut voxels = VoxelGrid::new(8, 8, 8);
         // Place a solid block in the middle.

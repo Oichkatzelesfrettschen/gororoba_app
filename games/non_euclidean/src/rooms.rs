@@ -83,14 +83,16 @@ impl Plugin for RoomsPlugin {
 /// Spawn rooms and the algebra domain for computing rotations.
 fn setup_rooms(mut commands: Commands, layout: Res<RoomLayout>) {
     // Spawn the algebra domain that drives room connections.
-    commands.spawn((
-        AlgebraDomain,
-        AlgebraParams {
-            dimension: layout.dimension,
-            ..default()
-        },
-        AlgebraDiagnostics::default(),
-    ));
+    let domain = commands
+        .spawn((
+            AlgebraDomain,
+            AlgebraParams {
+                dimension: layout.dimension,
+                ..default()
+            },
+            AlgebraDiagnostics::default(),
+        ))
+        .id();
 
     // Spawn rooms in a ring layout.
     let angle_step = std::f32::consts::TAU / layout.room_count as f32;
@@ -113,7 +115,7 @@ fn setup_rooms(mut commands: Commands, layout: Res<RoomLayout>) {
     // reads child HypercomplexElement components).
     let dim = layout.dimension.dim();
     for i in 0..3.min(dim) {
-        commands.spawn(HypercomplexElement::basis(dim, i + 1));
+        commands.spawn((HypercomplexElement::basis(dim, i + 1), ChildOf(domain)));
     }
 }
 
